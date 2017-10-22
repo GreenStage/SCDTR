@@ -1,26 +1,33 @@
-#include <stack>
+#include "Desk.hpp"
 
-class Desk{
+float Desk::get_current_illuminance(){
+    return lastMinuteIlluminance.front();
+}
 
-public:
-    float get_current_illuminance();
-    float get_current_duty_cicle();
-    bool get_occupancy_state();
-    float get_lower_illuminance();
-    float get_external_illuminance();
-    float get_illuminance_control();
-    float get_power_consuption();
+float Desk::get_current_duty_cicle(){
+    return lastMinuteCycle.front();
+}
 
-    float get_accumulated_energy();
+bool Desk::get_occupancy_state(){
+    return ocupancy_state;
+}
 
-    float get_accumulated_confort_error();
-   
-    float get_accumulated_confort_variance();
-    bool set_occupancy_state();
+float Desk::get_lower_illuminance(){
+    return lower_illuminance;
+}
 
-    
-private:
-    std::stack<float> lastMinuteIlluminance;
-    std::stack<float> lastMinuteCycle;
+float Desk::get_accumulated_energy(){
+    return accumulated_energy;
+}
 
-};
+float Desk::get_accumulated_confort_error(){
+    return accumulated_confort_error;
+}
+
+float Desk::get_accumulated_confort_variance(){
+     return acumulated_confort_variance;
+}
+
+void Desk::set_occupancy_state(bool state){
+    ocupancy_state = state;
+}
