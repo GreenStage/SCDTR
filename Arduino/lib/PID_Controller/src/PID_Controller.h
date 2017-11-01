@@ -4,6 +4,7 @@
 class PID_Controller {
   private:
     int _Ts, _r;
+    int _min_lux, _max_lux;
     float _y, _e, _p, _i, _d, _aw, _u;
     float _y_prev, _e_prev, _i_prev, _d_prev;
     double _K, _K1, _K2, _K3, _K4;
@@ -13,14 +14,19 @@ class PID_Controller {
 
   public:
     // Constructor
-    PID_Controller(int T, int r, double Kp, double Ki, double Kd, double a, double b);
+    PID_Controller(int T, int r, int Kp, int Ki, int Kd, int a, int b);
+
+    // Getters
+    int getRef();
+    int getMin();
+    int getMax();
 
     // Setters
-    void incRef();
-    void decRef();
+    void incRef(int v);
+    void decRef(int v);
     void setRef(int r);
     void setPeriod(int T);
-    void setGains(double Kp, double Ki, double Kd, double a, double b);
+    void setGains(int Kp, int Ki, int Kd, int a, int b);
 
     // Commands
     void sample(float y);
