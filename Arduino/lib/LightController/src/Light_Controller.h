@@ -14,7 +14,7 @@
 
 class Light_Controller {
   private:
-    float _min_lux, _max_lux;
+    double _min_lux, _max_lux;
     int _n;
 
     float volt2ohm(int v_in);

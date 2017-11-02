@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "PID_Controller.h"
 
-PID_Controller::PID_Controller(int T, int r, int Kp, int Ki, int Kd, int a, int b) {
+PID_Controller::PID_Controller(int T, int r, double Kp, double Ki, double Kd, int a, int b) {
   _y_prev = _e_prev = _i_prev = _d_prev = 0;
   _Ts = T;
   _r = r;
@@ -18,7 +18,7 @@ void PID_Controller::decRef(int v){ _r -= v; }
 
 void PID_Controller::setPeriod(int T){ _Ts = T; }
 
-void PID_Controller::setGains(int Kp, int Ki, int Kd, int a, int b){
+void PID_Controller::setGains(double Kp, double Ki, double Kd, int a, int b){
   _K = Kp;
   _K1 = Kp * b;
   _K2 = Kp * Ki * _Ts/2;
@@ -29,17 +29,17 @@ void PID_Controller::setGains(int Kp, int Ki, int Kd, int a, int b){
 void PID_Controller::sample(float y) { _y = y; }
 
 void PID_Controller::_deadzone() {
-  if(_e > 5) _e -= 5;
-  else if(_e < -5) _e += 5;
+  if(_e > 1) _e -= 1;
+  else if(_e < -1) _e += 1;
 }
 
 void PID_Controller::_saturate() {
   if(_aw > 255){
      _u = 255;
-     //_i -= _aw - 255;
+     _i -= _aw - 255;
   } else if(_aw < 0){
      _u = 0;
-     //_i -= _aw;
+     _i -= _aw;
   } else {
      _u = round(_aw);
   }
@@ -61,11 +61,12 @@ int PID_Controller::process(){
 
   //Serial.println("P: " + String(_p));
   //Serial.println("I: " + String(_i));
+  //Serial.println("D: " + String(_d));
   //Serial.println("AW: " + String(_aw));
 
   // Mudar valores para ter em conta a conversão lux2dc
   _saturate();
-  Serial.println("U: " + String(_u));
+  //Serial.println("U: " + String(_u));
   return _u;
 }
 

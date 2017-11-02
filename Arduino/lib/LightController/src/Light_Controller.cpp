@@ -8,9 +8,9 @@ const float V2L_B = 1/LDR_SL;
 // Default values
 int T = 50;
 int r = 20;
-int Kp = 10;
-int Ki = 10;
-int Kd = 1;
+double Kp = 4.2;// 7*0.6;
+double Ki = 0.05;//2.0/T;
+double Kd = 6.125;//T/8.0;
 int a = 10;
 int b = 1;
 int n = 5;
@@ -20,9 +20,7 @@ PID_Controller pid(T, r, Kp, Ki, Kd, a, b);
 float Light_Controller::volt2ohm(int v_in){ return R0 * (VCC / float(v_in)) - R0; }
 float Light_Controller::volt2lux(int v_in){ return V2L_A * pow(volt2ohm(v_in), V2L_B); }
 
-int Light_Controller::getPeriod(){
-  return T;
-}
+int Light_Controller::getPeriod(){ return T; }
 
 int Light_Controller::getLight(){
   int sum;
@@ -47,4 +45,4 @@ void Light_Controller::process(){
 }
 
 void Light_Controller::setLowRef(){ pid.setRef(_max_lux/3); }
-void Light_Controller::setHighRef(){ pid.setRef(_max_lux*2/3); }
+void Light_Controller::setHighRef(){ pid.setRef(2*_max_lux/3); }

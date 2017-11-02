@@ -14,7 +14,7 @@ class PID_Controller {
 
   public:
     // Constructor
-    PID_Controller(int T, int r, int Kp, int Ki, int Kd, int a, int b);
+    PID_Controller(int T, int r, double Kp, double Ki, double Kd, int a, int b);
 
     // Getters
     int getRef();
@@ -26,7 +26,7 @@ class PID_Controller {
     void decRef(int v);
     void setRef(int r);
     void setPeriod(int T);
-    void setGains(int Kp, int Ki, int Kd, int a, int b);
+    void setGains(double Kp, double Ki, double Kd, int a, int b);
 
     // Commands
     void sample(float y);

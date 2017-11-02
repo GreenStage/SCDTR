@@ -9,8 +9,6 @@
 #define LDR_SL -0.691
 #define LDR_OA 4.775
 
-#define N_STEPS 32
-
 const float V2L_A = pow(10, -LDR_OA/LDR_SL);
 const float V2L_B = 1/LDR_SL;
 
@@ -25,9 +23,9 @@ int getLight(){
 }
 
 // Default values
-int T = 100;
+int T = 50;
 int r = 20;
-int Kp = 17 * 0.45; //Kc = 17;
+int Kp = 17 * 0.45;
 int Ki = 1.2/T;
 int Kd = 0;
 int a = 10;
@@ -52,10 +50,10 @@ void loop() {
     incomingByte = Serial.read();
     switch(incomingByte){
       case 49:
-        pid.decRef();
+        pid.decRef(5);
         break;
       case 50:
-        pid.incRef();
+        pid.incRef(5);
         break;
     }
   }
