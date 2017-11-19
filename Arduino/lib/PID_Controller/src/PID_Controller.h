@@ -3,11 +3,10 @@
 
 class PID_Controller {
   private:
-    int _Ts, _r;
-    int _min_lux, _max_lux;
-    float _y, _e, _p, _i, _d, _aw, _u;
+    int _Ts, _r, _ff_mode;
+    float _y, _e, _p, _i, _d, _aw, _u, _ff;
     float _y_prev, _e_prev, _i_prev, _d_prev;
-    double _K, _K1, _K2, _K3, _K4;
+    double _K, _K1, _K2, _K3, _K4, _Kff;
 
     void _deadzone();
     void _saturate();
@@ -26,6 +25,7 @@ class PID_Controller {
     void decRef(int v);
     void setRef(int r);
     void setPeriod(int T);
+    void setFFGain(int Kff);
     void setGains(double Kp, double Ki, double Kd, int a, int b);
 
     // Commands

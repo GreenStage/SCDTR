@@ -41,6 +41,12 @@ void loop() {
         lightController.setHighRef();
         state = 1;
         break;
+      case 51:
+        lightController.toggleFeedForward();
+        break;
+      case 52:
+        lightController.calibrate();
+        break;
     }
   }
 

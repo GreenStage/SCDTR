@@ -15,7 +15,12 @@
 class Light_Controller {
   private:
     double _min_lux, _max_lux;
-    int _n;
+    int _ff_mode;
+    int _n = 5;
+    int _r = 0;
+    int _ff = 1;
+
+    void _feedforward(int r);
 
     float volt2ohm(int v_in);
     float volt2lux(int v_in);
@@ -32,6 +37,7 @@ class Light_Controller {
     // Commands
     void process();
     void calibrate();
+    void toggleFeedForward();
 };
 
 #endif

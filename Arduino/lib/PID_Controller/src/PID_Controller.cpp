@@ -9,8 +9,6 @@ PID_Controller::PID_Controller(int T, int r, double Kp, double Ki, double Kd, in
 }
 
 int PID_Controller::getRef(){ return _r; }
-int PID_Controller::getMin(){ return _min_lux; }
-int PID_Controller::getMax(){ return _max_lux; }
 
 void PID_Controller::setRef(int r){ _r = r; }
 void PID_Controller::incRef(int v){ _r += v; }
@@ -18,6 +16,7 @@ void PID_Controller::decRef(int v){ _r -= v; }
 
 void PID_Controller::setPeriod(int T){ _Ts = T; }
 
+void PID_Controller::setFFGain(int Kff){ _Kff = Kff; }
 void PID_Controller::setGains(double Kp, double Ki, double Kd, int a, int b){
   _K = Kp;
   _K1 = Kp * b;
@@ -47,7 +46,7 @@ void PID_Controller::_saturate() {
 
 int PID_Controller::process(){
   _e = _r - _y;
-  Serial.println("Y: " + String(_y));
+  //Serial.println("Y: " + String(_y));
   _deadzone();
 
   //Serial.println("Y: " + String(_y));
@@ -56,17 +55,18 @@ int PID_Controller::process(){
   _p = _K1 * _r - _K * _y;
   _i = _i_prev + _K2 * (_e + _e_prev);
   _d = _K3 * _d_prev - _K4 * (_y - _y_prev);
-
-  _aw = _p + _i + _d;
+  _ff = _Kff * _r;
+  _aw = _p + _i + _d + _ff;
 
   //Serial.println("P: " + String(_p));
   //Serial.println("I: " + String(_i));
   //Serial.println("D: " + String(_d));
+  Serial.println("FF: " + String(_ff));
   //Serial.println("AW: " + String(_aw));
 
   // Mudar valores para ter em conta a conversão lux2dc
   _saturate();
-  //Serial.println("U: " + String(_u));
+  Serial.println("U: " + String(_u));
   return _u;
 }
 
