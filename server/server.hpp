@@ -1,8 +1,11 @@
+#ifndef SERVER_HEADER
+#define SERVER_HEADER
+
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
-
+#include "datamanager.hpp"
 #include <list>
 using boost::asio::ip::tcp;
 using namespace std;
@@ -40,3 +43,5 @@ private:
     std::string message_read_;
     DataManager dManager;
 };
+#endif
+

@@ -1,6 +1,9 @@
 
 
 
+#ifndef DATA_HEADER
+#define DATA_HEADER
+
 #include <thread>
 #include <list>
 #include <vector>
@@ -34,3 +37,5 @@ private:
 
     thread timerThread;
 };
+
+#endif

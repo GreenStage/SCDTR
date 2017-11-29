@@ -1,3 +1,6 @@
+#ifndef DESK_HEADER
+#define DESK_HEADER
+
 #include <queue>
 using namespace std;
 
@@ -31,3 +34,5 @@ private:
     float accumulated_confort_error;
     float acumulated_confort_variance;
 };
+
+#endif
