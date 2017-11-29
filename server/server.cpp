@@ -1,6 +1,7 @@
 
 #include "server.hpp"
 #include "datamanager.hpp"
+#include "utils.hpp"
 
 server::server(boost::asio::io_service& io_service)
     : acceptor_( io_service, tcp::endpoint(tcp::v4(), 13) ){
