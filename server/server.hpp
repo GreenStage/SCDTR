@@ -10,18 +10,6 @@
 using boost::asio::ip::tcp;
 using namespace std;
 
-class server{
-
-public:
-    server(boost::asio::io_service& io_service,DataManager& dManager);
-private:
-    void start_accept();
-    void handle_accept(Session::pointer new_connection, const boost::system::error_code& error);
-
-    list<Session> activeSessions;
-    tcp::acceptor acceptor_;
-};
-
 
 class Session : public boost::enable_shared_from_this<Session> {
 
@@ -43,5 +31,19 @@ private:
     std::string message_read_;
     DataManager dManager;
 };
+
+class server{
+
+public:
+    server(boost::asio::io_service& io_service,DataManager& dManager);
+private:
+    void start_accept();
+    void handle_accept(Session::pointer new_connection, const boost::system::error_code& error);
+
+    list<Session> activeSessions;
+    tcp::acceptor acceptor_;
+};
+
+
 #endif
 
