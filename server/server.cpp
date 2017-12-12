@@ -2,46 +2,44 @@
 #include "server.hpp"
 #include "utils.hpp"
 
-server::server(boost::asio::io_service& io_service)
+Server::Server(boost::asio::io_service& io_service,DataManager * dManager)
     : acceptor_( io_service, tcp::endpoint(tcp::v4(), 13) ){
-    
-    start_accept(dManager);
+    it = activeSessions.begin();
+    dManager_ = dManager;
+    start_accept();
 }
 
-void server::start_accept(){
+void Server::start_accept(){
     Session::pointer new_connection =
-        Session::create(acceptor_.io_service());
+        Session::create(acceptor_.get_io_service());
 
-    acceptor_.async_accept(new_connection->socket(),
-        boost::bind(&tcp_server::handle_accept, this, new_connection,
-            boost::asio::placeholders::error));
+    acceptor_.async_accept(new_connection->get_socket(),
+        boost::bind(&Server::handle_accept, this, new_connection,boost::asio::placeholders::error));
 }
 
-void server::handle_accept(Session::pointer new_connection, const boost::system::error_code& error) {
+void Server::handle_accept(Session::pointer new_connection, const boost::system::error_code& error) {
     if (!error) {
         new_connection->start();
-        activeSessions.insert(new_connection);
+        activeSessions.insert(it,new_connection);
 
         start_accept();
     }
 }
 
 
-pointer Session::create(boost::asio::io_service& io_service) {
-    return pointer(new Session(io_service));
+Session::pointer Session::create(boost::asio::io_service& io_service) {
+    return Session::pointer(new Session(io_service));
 }
 
 void Session::start(){
-        message_ = "oi";
+        message_= {'o','i'};
         boost::asio::async_write(socket_, boost::asio::buffer(message_),
           boost::bind(&Session::handle_write, shared_from_this(),
              boost::asio::placeholders::error,
              boost::asio::placeholders::bytes_transferred)
         );
-        boost::asio::async_read(socket_,boost:assio::buffer(message_read_),
-            boost:bind(&Session:handle_read,shared_from_this(),
-                boost:assio:placeholders::error,
-                boost::asio::placeholders::bytes_tranferred)
+        boost::asio::async_read(socket_,boost::asio::buffer(message_read_,100),
+            boost::bind(&Session::handle_read,shared_from_this(),boost::asio::placeholders::error)
         );
 
     }
@@ -50,20 +48,29 @@ Session::Session(boost::asio::io_service& io_service) : socket_(io_service){
 
 }
     
-void Session:handle_write(const boost::system::error_code& error,
+void Session::handle_write(const boost::system::error_code& error,
     size_t bytes_transferred){
-    std::cout << "WRITE: " << message_ << endl;
+    /*cout << "WRITE: " << &&message_ << endl;*/
 }
 
-void Session::handle_read(cconst boost::system::error_code& error,
-    size_t bytes_transferred){
+void Session::handle_read(const boost::system::error_code& error){
+    if(error){
+		cout << "Error occurred." << std::endl;
 
-    std::cour << "READ: " << message_read_ << endl;
-    dManager.parse_command(explode(message_read,' '));
-
-    boost::asio::async_read(socket_,boost:assio::buffer(message_read_),
-        boost:bind(&Session:handle_read,shared_from_this(),
-            boost:assio:placeholders::error,
-            boost::asio::placeholders::bytes_tranferred)
+        return;
+    }
+    string message_str(message_read_.begin(),message_read_.end());
+            std::cout << "Message: " << message_str << std::endl;
+/*	string message_read(buf.data());
+    std::cout << "READ: " << message_read << endl;
+    dManager->parse_command(explode(message_read,' '));
+*/
+    boost::asio::async_read(socket_,boost::asio::buffer(message_read_,100),
+        boost::bind(&Session::handle_read,shared_from_this(),boost::asio::placeholders::error)
     );
 }
+
+tcp::socket&  Session::get_socket(){
+	return socket_;
+}
+

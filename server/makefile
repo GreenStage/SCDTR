@@ -2,7 +2,7 @@ CFLAGS= -std=c++11
 all: bigboss
 
 bigboss: main.o server.o desk.o utils.o datamanager.o
-	g++ -o bigboss main.o server.o desk.o utils.o datamanager.o
+	g++ -L/lib/arm-linux-gnueabihf -lboost_system -lpthread -o bigboss main.o server.o desk.o utils.o datamanager.o
 
 main.o: main.cpp server.hpp
 	g++ -c $(CFLAGS) main.cpp -lpthread -lboost_system
@@ -11,10 +11,14 @@ server.o: server.hpp server.cpp datamanager.hpp utils.hpp
 	g++ -c $(CFLAGS) server.cpp -lpthread -lboost_system
 
 datamanager.o: datamanager.hpp datamanager.cpp desk.hpp defs.h
-	g++ -c $(CFLAGS) datamanager.cpp
+	g++ -c $(CFLAGS) datamanager.cpp -lpthread -lboost_system
 
 desk.o: desk.hpp desk.hpp
-	g++ -c $(CFLAGS) desk.cpp
+	g++ -c $(CFLAGS) desk.cpp -lpthread -lboost_system
 
 utils.o: utils.cpp utils.hpp
 	g++ -c $(CFLAGS) utils.cpp
+
+clean:
+	rm -f *.o &&\
+	rm -f bigboss

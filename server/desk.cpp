@@ -1,4 +1,4 @@
-#include "Desk.hpp"
+#include "desk.hpp"
 
 float Desk::get_current_illuminance(){
     return lastMinuteIlluminance.front();
@@ -30,4 +30,16 @@ float Desk::get_accumulated_confort_variance(){
 
 void Desk::set_occupancy_state(bool state){
     ocupancy_state = state;
+}
+
+float Desk::get_power_consuption(){
+	return power_consumption;
+}
+
+float Desk::get_external_illuminance(){
+	return external_illuminance;
+}
+
+float Desk::get_illuminance_control(){
+	return control_reference;
 }

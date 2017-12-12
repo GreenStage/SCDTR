@@ -1,6 +1,4 @@
 
-
-
 #ifndef DATA_HEADER
 #define DATA_HEADER
 

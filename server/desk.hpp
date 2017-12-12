@@ -33,6 +33,8 @@ private:
     float accumulated_energy;
     float accumulated_confort_error;
     float acumulated_confort_variance;
+    float power_consumption;
+    float control_reference;
 };
 
 #endif

@@ -1,11 +1,13 @@
-#include <datamanager.hpp>
-#include <boost/asio.hpp>
+#include "datamanager.hpp"
 #include <stdexcept>
 #include <string>
 #include <chrono>
 
 using namespace std;
 
+DataManager * DataManager::instance = NULL;
+bool DataManager::initiliazed = false;
+    
 class dm_not_Initialized: public exception {
 
     virtual const char* what() const throw() {
@@ -14,21 +16,21 @@ class dm_not_Initialized: public exception {
 } dmNotInitialized;
   
 void DataManager::initialize(int numDesks){
-    instance = new DataManager(numDesks);
+    DataManager::instance = new DataManager(numDesks);
     return;
 }
 
 DataManager * DataManager::getInstance(){
-    if(!initiliazed){
+    if(!DataManager::initiliazed){
         throw dmNotInitialized;
     }
-    return instance;
+    return DataManager::instance;
 }
 
 DataManager::DataManager(int numDesks) : activeDesks( new Desk[numDesks] ){
     numDesks_ = numDesks;
     initiliazed = true;
-    thread valitorThread {validate_data};
+    thread valitorThread(&DataManager::validate_data,this);
 }
 
 void DataManager::validate_data(){
@@ -42,7 +44,6 @@ DataManager::~DataManager(){
 
 
 string DataManager::parse_command(vector<string> command){
-    void * command;
 
     string retval ="";
     if(command.at(0).compare("g") == 0){
@@ -51,7 +52,7 @@ string DataManager::parse_command(vector<string> command){
 
         int deskIt;
 
-        if(command.size < 3){
+        if(command.size() < 3){
             return "UNK";
         } 
         
@@ -122,7 +123,7 @@ string DataManager::parse_command(vector<string> command){
                     return retval + to_string( activeDesks[deskIt].get_illuminance_control() );
                 
                 case 'p':
-                    return retval + to_string( activeDesks[deskIt].get_power_consuption() ));
+                    return retval + to_string( activeDesks[deskIt].get_power_consuption() );
                 
                 case 'e':
                     return retval + to_string( activeDesks[deskIt].get_accumulated_energy() );
@@ -160,4 +161,5 @@ string DataManager::parse_command(vector<string> command){
     }
 
 }
-  
+
+void DataManager::restart(){}
