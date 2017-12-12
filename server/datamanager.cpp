@@ -3,11 +3,16 @@
 #include <string>
 #include <chrono>
 
+#include <unistd.h>			
+#include <fcntl.h>			
+#include <sys/ioctl.h>		
+#include <linux/i2c-dev.h>
+
 using namespace std;
 
 DataManager * DataManager::instance = NULL;
 bool DataManager::initiliazed = false;
-    
+
 class dm_not_Initialized: public exception {
 
     virtual const char* what() const throw() {
@@ -27,10 +32,27 @@ DataManager * DataManager::getInstance(){
     return DataManager::instance;
 }
 
-DataManager::DataManager(int numDesks) : activeDesks( new Desk[numDesks] ){
+DataManager::DataManager(int numDesks, int * desk_address){
+    int file_i2c;
+    char *filename = (char*)"/dev/i2c-1";
+    
     numDesks_ = numDesks;
+    activeDesks = (Desk **) malloc(sizeof(Desk*) * numDesks_);
+
+	if ((file_i2c = open(filename, O_RDWR)) < 0){
+        throw("Failed to open the i2c bus" );
+	}
+    
+    for(int i = 0; i < numDesks_;i++ ){ {
+        try{
+            activeDesks[i] = new Desk(desk_address);
+        }
+        catch(exception e){
+            cout << "Exception creating desk " << i << " :" << e.what();
+        }
+    }
+    
     initiliazed = true;
-    thread valitorThread(&DataManager::validate_data,this);
 }
 
 void DataManager::validate_data(){

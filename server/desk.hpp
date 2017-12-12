@@ -1,12 +1,21 @@
 #ifndef DESK_HEADER
 #define DESK_HEADER
 
+#include <thread>
+#include <unistd.h>			
+#include <fcntl.h>			
+#include <sys/ioctl.h>		
+#include <linux/i2c-dev.h>
+
 #include <queue>
 using namespace std;
 
-class Desk{
+class Desk : thread{
 
 public:
+    Desk(int,int);
+    ~Desk();
+
     float get_current_illuminance();
     float get_current_duty_cicle();
     bool get_occupancy_state();
@@ -14,7 +23,6 @@ public:
     float get_external_illuminance();
     float get_illuminance_control();
     float get_power_consuption();
-
     float get_accumulated_energy();
 
     float get_accumulated_confort_error();
@@ -24,9 +32,10 @@ public:
 
     
 private:
+    void get_data(int);
     queue<float> lastMinuteIlluminance;
     queue<float> lastMinuteCycle;
-
+    int address;
     bool ocupancy_state;
     float lower_illuminance;
     float external_illuminance;

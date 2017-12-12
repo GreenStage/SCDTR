@@ -31,8 +31,8 @@ private:
     static DataManager * instance;
     static bool initiliazed;
     int numDesks_;
-    Desk * activeDesks;
-
+    Desk ** activeDesks;
+    unsigned char buffer[60] = {0};
     thread timerThread;
 };
 
