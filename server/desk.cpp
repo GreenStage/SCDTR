@@ -7,9 +7,9 @@ using namespace std;
 
 struct message_{
     uint8_t command,
-    uint32_t val1,
+    float val1,
     uint32_t val2
-} buffer;
+};
 
 Desk::Desk(int fd, int address):thread(Desk::get_data,this,fd){
     address_ = address;
@@ -26,16 +26,38 @@ void Desk::get_data(int fd){
 	}
 	else{
         cout << "Read message: " << buffer.command << ", val1 : "
-             << command.val1 << ", val2: " command.val2 << endl;
+             << buffer.val1 << ", val2: " buffer.val2 << endl;
+        
+        switch(buffer.command){
+            case 0x1:
+                lastMinuteIlluminance.push(buffer.val1);
+                break;
+
+            case 0x2:
+                lastMinuteCycle.push(buffer.val1);
+                break;
+
+            case 0x3:
+                ocupancy_state = buffer.val2 == 0 ? 0 : 1;
+                break;
+            
+            case 0x4:
+                lower_illuminance = buffer.val1;
+                break;
+            
+            case 0x5:
+                accumulated_energy = buffer.val1;
+                break;
+        }
 	}
 }
 
 float Desk::get_current_illuminance(){
-    return lastMinuteIlluminance.front();
+    return lastMinuteIlluminance.top();
 }
 
 float Desk::get_current_duty_cicle(){
-    return lastMinuteCycle.front();
+    return lastMinuteCycle.top();
 }
 
 bool Desk::get_occupancy_state(){

@@ -32,9 +32,10 @@ public:
 
     
 private:
+    struct message_ buffer;
     void get_data(int);
-    queue<float> lastMinuteIlluminance;
-    queue<float> lastMinuteCycle;
+    stack<float> lastMinuteIlluminance;
+    stack<float> lastMinuteCycle;
     int address;
     bool ocupancy_state;
     float lower_illuminance;
