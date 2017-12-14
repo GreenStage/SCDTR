@@ -1,15 +1,11 @@
 #include "desk.hpp"
 #include <stdint.h>
+#include <time.h>
 
 #define MESSAGE_SIZE 18
 
 using namespace std;
 
-struct message_{
-    uint8_t command,
-    float val1,
-    uint32_t val2
-};
 
 Desk::Desk(int fd, int address):thread(Desk::get_data,this,fd){
     address_ = address;
@@ -22,19 +18,37 @@ Desk::Desk(int fd, int address):thread(Desk::get_data,this,fd){
 
 void Desk::get_data(int fd){
 	if (read(fd, &buffer, MESSAGE_SIZE) != MESSAGE_SIZE){
-		printf("Failed to read from the i2c bus.\n");
+        cout << "Failed to read from the i2c bus." << endl;
+        join(); // End thread
 	}
 	else{
+#ifdef DEBUG
         cout << "Read message: " << buffer.command << ", val1 : "
              << buffer.val1 << ", val2: " buffer.val2 << endl;
-        
+#endif     
         switch(buffer.command){
             case 0x1:
-                lastMinuteIlluminance.push(buffer.val1);
+                struct timed_value_ t;
+                t.value = buffer.val1;
+                t.issued_at =  time(NULL);
+                lastMinuteIlluminance.push(t);
+
+                /*Remove data over 1 minute old*/
+                while(lastMinuteIlluminance.empty() == false && t.value - lastMinuteIlluminance.front().issued_at > 60){
+                    lastMinuteIlluminance.pop();
+                }
                 break;
 
             case 0x2:
-                lastMinuteCycle.push(buffer.val1);
+                struct timed_value_ t;
+                t.value = buffer.val1;
+                t.issued_at =  time(NULL);
+                lastMinuteCycle.push(t);
+                
+                /*Remove data over 1 minute old*/
+                while(lastMinuteCycle.empty() == false && t.value - lastMinuteCycle.front().issued_at > 60){
+                    lastMinuteCycle.pop();
+                }
                 break;
 
             case 0x3:
@@ -48,16 +62,24 @@ void Desk::get_data(int fd){
             case 0x5:
                 accumulated_energy = buffer.val1;
                 break;
+            
+            case 0x6:
+                power_consumption = buffer.val1;
+                break;
+            case 0x7:
+                external_illuminance = buffer.val1;
+                break;
+            
         }
 	}
 }
 
 float Desk::get_current_illuminance(){
-    return lastMinuteIlluminance.top();
+    return lastMinuteIlluminance.back();
 }
 
 float Desk::get_current_duty_cicle(){
-    return lastMinuteCycle.top();
+    return lastMinuteCycle.back();
 }
 
 bool Desk::get_occupancy_state(){

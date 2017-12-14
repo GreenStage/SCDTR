@@ -6,6 +6,7 @@
 #include <fcntl.h>			
 #include <sys/ioctl.h>		
 #include <linux/i2c-dev.h>
+#include <time.h>
 
 #include <queue>
 using namespace std;
@@ -32,10 +33,20 @@ public:
 
     
 private:
-    struct message_ buffer;
+    struct __attribute__ ((packed)) message_{
+        uint8_t command,
+        float val1,
+        uint32_t val2
+    } buffer;
+
+    struct timed_value_{
+        float value;
+        time_t issued_at;
+    };
+
     void get_data(int);
-    stack<float> lastMinuteIlluminance;
-    stack<float> lastMinuteCycle;
+    queue<struct timed_value_> lastMinuteIlluminance;
+    queue<struct timed_value_> lastMinuteCycle;
     int address;
     bool ocupancy_state;
     float lower_illuminance;
