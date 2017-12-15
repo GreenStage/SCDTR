@@ -7,13 +7,8 @@
 using namespace std;
 
 
-Desk::Desk(int fd, int address):thread(Desk::get_data,this,fd){
+Desk::Desk(int fd, int address){
     address_ = address;
-    if (ioctl(fd, I2C_SLAVE, address_) < 0){
-        char stringErr[100];
-        sprintf(stringErr,"Failed to reach slave at address: %d", address_);
-        throw stringErr;
-    }
 }
 
 void Desk::get_data(int fd){
@@ -75,6 +70,7 @@ void Desk::get_data(int fd){
 }
 
 float Desk::get_current_illuminance(){
+
     return lastMinuteIlluminance.back();
 }
 

@@ -11,7 +11,7 @@
 #include <queue>
 using namespace std;
 
-class Desk : thread{
+class Desk{
 
 public:
     Desk(int,int);
@@ -34,9 +34,9 @@ public:
     
 private:
     struct __attribute__ ((packed)) message_{
-        uint8_t command,
-        float val1,
-        uint32_t val2
+        uint8_t command;
+        float val1;
+        uint32_t val2;
     } buffer;
 
     struct timed_value_{
@@ -44,10 +44,12 @@ private:
         time_t issued_at;
     };
 
+ 
     void get_data(int);
+
+
     queue<struct timed_value_> lastMinuteIlluminance;
     queue<struct timed_value_> lastMinuteCycle;
-    int address;
     bool ocupancy_state;
     float lower_illuminance;
     float external_illuminance;

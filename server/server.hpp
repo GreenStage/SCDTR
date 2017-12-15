@@ -43,6 +43,7 @@ class Server{
 
 public:
     Server(boost::asio::io_service& io_service,DataManager* dManager);
+    write(string message);
 private:
     void start_accept();
     void handle_accept(Session::pointer, const boost::system::error_code&);

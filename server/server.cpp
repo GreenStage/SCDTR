@@ -53,6 +53,12 @@ void Session::handle_write(const boost::system::error_code& error,
     /*cout << "WRITE: " << &&message_ << endl;*/
 }
 
+void Session::write(string message){
+      boost::system::error_code ignored_error;
+      boost::asio::write(socket, boost::asio::buffer(message),
+          boost::asio::transfer_all(), ignored_error);
+}
+        
 void Session::handle_read(const boost::system::error_code& error){
     if(error){
 		cout << "Error occurred." << std::endl;
@@ -61,10 +67,10 @@ void Session::handle_read(const boost::system::error_code& error){
     }
     string message_str(message_read_.begin(),message_read_.end());
             std::cout << "Message: " << message_str << std::endl;
-/*	string message_read(buf.data());
+	string message_read(buf.data());
     std::cout << "READ: " << message_read << endl;
     dManager->parse_command(explode(message_read,' '));
-*/
+
     boost::asio::async_read(socket_,boost::asio::buffer(message_read_,100),
         boost::bind(&Session::handle_read,shared_from_this(),boost::asio::placeholders::error)
     );
