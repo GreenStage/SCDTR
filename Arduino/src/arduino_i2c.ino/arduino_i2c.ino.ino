@@ -15,7 +15,7 @@ boolean done=false;
 
 enum packet_ids{
   PACKET_NONE = 0,
-  RASP_RQST_MIN = 0x40,
+  RASP_RQST_MIN = 0x40, /*64 packet types reserved*/
   RASP_RQST_ILU,
   RASP_RQST_DUTY_CICLE,
   RASP_RQST_LOWER_ILUMINANCE,
@@ -30,12 +30,12 @@ enum packet_ids{
   RASP_RQST_SET_OCCUP,
   RASP_RQST_MAX,
   
-  ARD_RQST_MIN = 0x80,
+  ARD_RQST_MIN = 0x80, /*64 packet types reserved*/
   ARD_RQST_REF,
   //ARDUINO_TO_ARDUINO REQUEST 3PACKETS
   ARD_RQST_MAX,
 
-  ARD_RESP_MIN = 0xC0,
+  ARD_RESP_MIN = 0xC0, /*64 packet types reserved*/
   ARD_RESP_ILU,
   ARD_RESP_DUTY_CICLE,
   ARD_RESP_LOWER_ILUMINANCE,
