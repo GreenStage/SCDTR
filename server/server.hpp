@@ -19,31 +19,31 @@ using namespace std;
 class Session : public boost::enable_shared_from_this<Session> {
 
 public:
-   
+    void write(string message);
     void start();
 	tcp::socket& get_socket();
 	typedef boost::shared_ptr<Session> pointer;
-	static pointer create(boost::asio::io_service& io_service);
+	static pointer create(boost::asio::io_service& io_service,DataManager * dManager);
 private:
 
-    Session(boost::asio::io_service& service);
+    Session(boost::asio::io_service& service,DataManager * dManager);
 
 
-	void handle_read(const boost::system::error_code&);
+	void handle_read(const boost::system::error_code& error,size_t bytes_read);
 
     void handle_write(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/);
 
     tcp::socket socket_;
-    boost::array<char, 100> message_;
-    boost::array<char, 100> message_read_;
-    DataManager * dManager;
+
+    boost::asio::streambuf input_buffer_;
+    DataManager * dManager_;
 };
 
 class Server{
 
 public:
     Server(boost::asio::io_service& io_service,DataManager* dManager);
-    write(string message);
+
 private:
     void start_accept();
     void handle_accept(Session::pointer, const boost::system::error_code&);

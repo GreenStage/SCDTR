@@ -13,7 +13,7 @@ using namespace std;
 class DataManager{
 
 public:
-    static void initialize(int numDesks);
+    static void initialize(int numDesks,int *desk_address);
     static DataManager * getInstance();
 
     string parse_command(vector<string> command);
@@ -22,30 +22,32 @@ public:
 
 private:
 
-    typedef struct __attribute__ ((packed)) req_ard{
-        uint8_t address;
+    typedef struct req_ard{
+		uint8_t src_address;
+        uint8_t dest_address;
         uint8_t type;
-    } request_to_arduino;
+    } __attribute__((__packed__)) request_to_arduino;
 
 
-    typedef struct __attribute__ ((packed)) _arduino_default_resp{
+    typedef struct _arduino_default_resp{
+		uint8_t src_address;
         uint8_t address;
         uint8_t type;
-    } arduino_default_resp;
+    } __attribute__((__packed__)) arduino_default_resp;
 
     list<request_to_arduino> pending_requests;
     list<request_to_arduino>::iterator rqsts_it;
 
-    list<request_to_arduino> pending_responses;
-    list<request_to_arduino>::iterator resps_it;
+    list<arduino_default_resp> pending_responses;
+    list<arduino_default_resp>::iterator resps_it;
 
-    void request(int , int );
+    string request(int , int );
     void parseResponse();
     string fetch_response(int ,int ,int );
 
-    bool exit;
+    bool exit = false;
 
-    DataManager(int numDesks);
+    DataManager(int numDesks,int * desk_address);
     int serialFd;
     void restart();
     list<float> get_last_minute_buffer();
@@ -55,10 +57,11 @@ private:
     static DataManager * instance;
     static bool initiliazed;
     int numDesks_;
+        int file_i2c=-1;
+    int listeningTo;
     Desk ** activeDesks;
     unsigned char buffer[60] = {0};
 
-    Server * comm_;
 };
 
 #endif

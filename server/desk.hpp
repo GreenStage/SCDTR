@@ -7,7 +7,7 @@
 #include <sys/ioctl.h>		
 #include <linux/i2c-dev.h>
 #include <time.h>
-
+#include <iostream>
 #include <queue>
 using namespace std;
 
@@ -16,7 +16,7 @@ class Desk{
 public:
     Desk(int,int);
     ~Desk();
-
+	int deskId,address;
     float get_current_illuminance();
     float get_current_duty_cicle();
     bool get_occupancy_state();
