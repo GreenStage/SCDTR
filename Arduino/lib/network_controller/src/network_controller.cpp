@@ -8,49 +8,29 @@ network_controller::network_controller(light_controller& lc, i2c_controller& i2c
   _dc_flag = false;
 }
 
-QueueArray<packet_t*> in_messages, out_messages;
+QueueArray<packet_t*> in_messages;
 
+int read_bytes;
 packet_t *in_buffer, *out_buffer;
 void onReceive(int numBytes){
-  int read_bytes = 0;
-  int send_bytes = 0;
-
   for(read_bytes = 0; read_bytes < numBytes; read_bytes++){
     ((byte*) (in_buffer))[read_bytes] = i2c.read();
   }
-
-  switch(in_buffer->id & 0xC0){
-    case 0x40:
-      send_bytes = nc.raspberry_request(in_buffer,out_buffer);
-      break;
-    case 0x80:
-      send_bytes = nc.arduino_request(in_buffer,out_buffer);
-      break;
-    case 0xC0:
-      send_bytes = nc.arduino_response(in_buffer,out_buffer);
-    default:
-      return;
-  }
-
-  if(send_bytes){
-    packet_t * out_message = (packet_t*) malloc(send_bytes);
-    memcpy(out_message,out_buffer,send_bytes);
-    out_messages.push(out_message);
-  }
+  packet_t * in_message = (packet_t*) malloc(read_bytes);
+  memcpy(in_message,in_buffer,read_bytes);
+  in_messages.push(in_message);
 }
 
 
 int network_controller::arduino_response(packet_t* req, packet_t* res){
   switch(req->id){
-    default:
-      break;
+
   }
   return 0;
 }
 
 int network_controller::arduino_request(packet_t* req, packet_t* res){
   switch(req->id){
-
 
   }
   return 0;
@@ -59,13 +39,13 @@ int network_controller::arduino_request(packet_t* req, packet_t* res){
 int network_controller::raspberry_request(packet_t* req, packet_t* res){
   switch(req->id){
 
-
   }
   return 0;
 }
 
 int incoming = 0;
-packet_t* send_packet;
+int send_bytes = 0;
+packet_t* receive_packet, send_packet;
 void network_controller::process(){
   if(Serial.available() > 0){
     incoming = Serial.read();
@@ -79,10 +59,29 @@ void network_controller::process(){
     }
   }
   Serial.println(_lc.getIlluminance());
-  if(!out_messages.isEmpty()){
-      send_packet = out_messages.pop();
-      _i2c.send(send_packet->dest, send_packet);
-      free(send_packet);
+  if(!in_messages.isEmpty()){
+      receive_packet = in_messages.pop();
+      switch(in_buffer->id & 0xC0){
+        case 0x40:
+          send_bytes = raspberry_request(in_buffer,out_buffer);
+          break;
+        case 0x80:
+          send_bytes = arduino_request(in_buffer,out_buffer);
+          break;
+        case 0xC0:
+          send_bytes = arduino_response(in_buffer,out_buffer);
+          break;
+        default:
+          send_bytes = 0;
+          break;;
+      }
+      free(receive_packet);
+      if(send_bytes){
+        packet_t *out_message = (packet_t*) malloc(send_bytes);
+        memcpy(out_message,out_buffer,send_bytes);
+        _i2c.send(out_message->dest, out_message);
+        free(out_message);
+      }
   }
 }
 
@@ -111,6 +110,4 @@ void network_controller::calibrate(){
 
 void network_controller::init(){
   _i2c.onReceive(onReceive);
-
-
 }

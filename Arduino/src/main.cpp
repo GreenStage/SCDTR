@@ -17,5 +17,4 @@ void setup() {
 void loop()
 {
   nc.process();
-  delay(100);
 }
