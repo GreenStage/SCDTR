@@ -39,17 +39,17 @@ void i2c_controller::onReceive(void (*cb)(int)){
 
 int i2c_controller::sizeOfPacket(packet_t *p){
   switch(p->id){
-    case ARDUINO_RES_ILU:
-    case ARDUINO_RES_DUTY_CICLE:
-    case ARDUINO_RES_LOWER_ILUMINANCE:
-    case ARDUINO_RES_ACC_ENERGY:
-    case ARDUINO_RES_ACC_CONFORT_ERR:
-    case ARDUINO_RES_ACC_CONFORT_VAR:
-    case ARDUINO_RES_POW_CONSUP:
-    case ARDUINO_RES_EXT_ILU:
-    case ARDUINO_RES_ILU_CTR:
+    case ARD_RES_ILU:
+    case ARD_RES_DUTY_CICLE:
+    case ARD_RES_LOWER_ILUMINANCE:
+    case ARD_RES_ACC_ENERGY:
+    case ARD_RES_ACC_CONFORT_ERR:
+    case ARD_RES_ACC_CONFORT_VAR:
+    case ARD_RES_POW_CONSUP:
+    case ARD_RES_EXT_ILU:
+    case ARD_RES_ILU_CTR:
       return sizeof(single_float_package);
-    case ARDUINO_RES_OCCUPANCY:
+    case ARD_RES_OCCUPANCY:
       return sizeof(single_byte_package);
     default:
       return 0;
@@ -58,16 +58,16 @@ int i2c_controller::sizeOfPacket(packet_t *p){
 
 int i2c_controller::responseOf(int id){
   switch(id){
-    case RASP_REQ_ILU:               return ARDUINO_RES_ILU;
-    case RASP_REQ_DUTY_CICLE:        return ARDUINO_RES_DUTY_CICLE;
-    case RASP_REQ_LOWER_ILUMINANCE:  return ARDUINO_RES_LOWER_ILUMINANCE;
-    case RASP_REQ_ACC_ENERGY:        return ARDUINO_RES_ACC_ENERGY;
-    case RASP_REQ_ACC_CONFORT_ERR:   return ARDUINO_RES_ACC_CONFORT_ERR;
-    case RASP_REQ_ACC_CONFORT_VAR:   return ARDUINO_RES_ACC_CONFORT_VAR;
-    case RASP_REQ_POW_CONSUP:        return ARDUINO_RES_POW_CONSUP;
-    case RASP_REQ_EXT_ILU:           return ARDUINO_RES_EXT_ILU;
-    case RASP_REQ_ILU_CTR:           return ARDUINO_RES_ILU_CTR;
-    case RASP_REQ_OCCUPANCY:         return ARDUINO_RES_OCCUPANCY;
+    case RASP_REQ_ILU:               return ARD_RES_ILU;
+    case RASP_REQ_DUTY_CICLE:        return ARD_RES_DUTY_CICLE;
+    case RASP_REQ_LOWER_ILUMINANCE:  return ARD_RES_LOWER_ILUMINANCE;
+    case RASP_REQ_ACC_ENERGY:        return ARD_RES_ACC_ENERGY;
+    case RASP_REQ_ACC_CONFORT_ERR:   return ARD_RES_ACC_CONFORT_ERR;
+    case RASP_REQ_ACC_CONFORT_VAR:   return ARD_RES_ACC_CONFORT_VAR;
+    case RASP_REQ_POW_CONSUP:        return ARD_RES_POW_CONSUP;
+    case RASP_REQ_EXT_ILU:           return ARD_RES_EXT_ILU;
+    case RASP_REQ_ILU_CTR:           return ARD_RES_ILU_CTR;
+    case RASP_REQ_OCCUPANCY:         return ARD_RES_OCCUPANCY;
     default:                         return PACKET_NONE;
   }
 }
