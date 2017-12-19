@@ -11,8 +11,8 @@ void setup() {
     Serial.begin(9600);
     nc.init();
     nc.calibrate();
-    nc.consensus();
-    //lc.calibrate();
+    //nc.consensus();
+    lc.calibrate();
     lc.initInterrupt();
 }
 

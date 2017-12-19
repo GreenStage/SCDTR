@@ -7,7 +7,7 @@
 
 enum packet_id {
   PACKET_NONE = 0,
-  RASP_MIN = 0x00,
+  RASP_MIN = 0x40,
   RASP_ILU,
   RASP_DUTY_CICLE,
   RASP_LOWER_ILUMINANCE,

@@ -6,6 +6,7 @@
 i2c_controller i2c;
 
 void i2c_controller::init(void (*cb)(int)){
+  Wire.begin(getId());
   TWAR = (getId() << 1) | 1;
   onReceive(cb);
 }
