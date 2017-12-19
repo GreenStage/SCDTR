@@ -5,9 +5,9 @@
 
 class pid_controller {
   private:
-    int _T, _r;
+    int _T, _r, _u;
     double _Kp, _Ki, _Kaw;
-    double _y, _e, _p, _i, _aw, _u;
+    double _y, _e, _p, _i, _aw;
     double _y_prev, _e_prev, _i_prev;
 
     void _deadzone();
@@ -19,10 +19,11 @@ class pid_controller {
     int saturate(double aw);
     void flush();
 
-    void setRef(int r);
     int getRef();
-    void setLight(double y);
+    void setRef(int r);
+    double getErr();
     double getLight();
+    void setLight(double y);
 };
 
 #endif

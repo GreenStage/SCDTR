@@ -7,7 +7,7 @@ class r2a_controller {
   private:
 
   public:
-    
+    void process();
 };
 
 #endif

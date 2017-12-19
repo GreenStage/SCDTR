@@ -10,7 +10,9 @@ extern network_controller nc;
 void setup() {
     Serial.begin(9600);
     nc.init();
-    lc.calibrate();
+    nc.calibrate();
+    nc.consensus();
+    //lc.calibrate();
     lc.initInterrupt();
 }
 

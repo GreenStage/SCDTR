@@ -39,6 +39,6 @@ void pid_controller::flush(){
 
 int pid_controller::getRef(){ return _r; }
 void pid_controller::setRef(int r){ _r = r; }
-
+double pid_controller::getErr(){ return _e; }
 double pid_controller::getLight(){ return _y; }
 void pid_controller::setLight(double y){ _y = y; }

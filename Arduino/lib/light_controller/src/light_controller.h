@@ -17,10 +17,10 @@
 class light_controller {
   private:
     double _min_lux, _max_lux;
-    double _u, _aw, _Kff;
-    int _T, _r, _o, _n = 3;
+    double _aw, _Kff;
+    int _T, _r, _u, _n = 3;
+    int _ocupancy = 0;
     int _ff_mode = 1;
-    int _K[];
     pid_controller _pid;
 
     double _getVolt();
@@ -36,9 +36,16 @@ class light_controller {
     void setLight(int dc);
     void setMaxRef();
     void setMinRef();
+    int getOcupancy();
+    int getMaxRef();
+    int getMinRef();
+    int getRef();
 
+    double getErr();
     double getLight();
+    double getLowerIlluminance();
     double getIlluminance();
+    int getDutyCycle();
 
     void initInterrupt();
     void startInterrupt();
