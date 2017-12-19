@@ -1,14 +1,14 @@
 #include "light_controller.h"
 
-const double V2L_A = pow(10, -LDR_OA/LDR_SL);
-const double V2L_B = 1/LDR_SL;
+const float V2L_A = pow(10, -LDR_OA/LDR_SL);
+const float V2L_B = 1/LDR_SL;
 
 // Default values
 int T = 40;
 int r = 40;
-double Kp = 2.5*0.45;
-double Ki = 1.2/T;
-double Kaw = 1;
+float Kp = 2.5*0.45;
+float Ki = 1.2/T;
+float Kaw = 1;
 
 light_controller lc(T, r, Kp, Ki, Kaw);
 
@@ -22,32 +22,32 @@ void light_interrupt(){
   }
 }
 
-light_controller::light_controller(int T, int r, double Kp, double Ki, double Kaw) : _pid(T, r, Kp, Ki, Kaw) {
+light_controller::light_controller(int T, int r, float Kp, float Ki, float Kaw) : _pid(T, r, Kp, Ki, Kaw) {
   _T = T;
-  _r = r;
+  _ocupancy = 0;
 }
 
-double light_controller::_volt2ohm(double v_in){ return R0 * (VCC / v_in) - R0; }
-double light_controller::_volt2lux(double v_in){ return V2L_A * pow(_volt2ohm(v_in), V2L_B); }
-double light_controller::_getVolt(){
-  double sum = 0;
+float light_controller::_volt2ohm(float v_in){ return R0 * (VCC / v_in) - R0; }
+float light_controller::_volt2lux(float v_in){ return V2L_A * pow(_volt2ohm(v_in), V2L_B); }
+float light_controller::_getVolt(){
+  float sum = 0;
   for(int i = 0; i < _n; i++)
     sum += analogRead(LDR_PIN);
   return sum / _n;
 }
 
-double light_controller::getErr(){ return _pid.getErr(); }
+float light_controller::getErr(){ return _pid.getErr(); }
 void light_controller::setLight(int dc){ analogWrite(LED_PIN, dc); }
-double light_controller::getLight(){ return _volt2lux(_getVolt()); }
-double light_controller::getIlluminance() { return _pid.getLight(); }
+float light_controller::getLight(){ return _volt2lux(_getVolt()); }
+float light_controller::getIlluminance() { return _pid.getLight(); }
 int light_controller::getDutyCycle(){ return _u; }
 
 void light_controller::setMaxRef() { _ocupancy = 1; _r = 2*255/3; }
 void light_controller::setMinRef() { _ocupancy = 0; _r = 255/3; }
 int light_controller::getOcupancy() { return _ocupancy; }
-int light_controller::getMaxRef() { return 2*255/3; }
-int light_controller::getMinRef() { return 255/3; }
-int light_controller::getRef() { return _r; }
+float light_controller::getMaxRef() { return 2*255/3; }
+float light_controller::getMinRef() { return 255/3; }
+float light_controller::getRef() { return _r; }
 
 void light_controller::calibrate(){
   setLight(0);

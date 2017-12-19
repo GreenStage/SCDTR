@@ -49,6 +49,7 @@ enum packet_id {
   ARD_DC,
   ARD_INIT_CAL,
   ARD_SYNC,
+  ARD_CONSENSUS,
   ARD_MAX
 };
 
@@ -107,7 +108,7 @@ class i2c_controller {
     void startSession(int to);
     void endSession();
     byte read();
-    void write(packet_t *message);
+    void write(packet_t *message, int size);
     void broadcast(packet_t *message);
     void send(int to, packet_t *message);
     void onReceive(void (*cb)(int));

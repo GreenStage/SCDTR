@@ -16,19 +16,19 @@
 
 class light_controller {
   private:
-    double _min_lux, _max_lux;
-    double _aw, _Kff;
-    int _T, _r, _u, _n = 3;
+    float _min_lux, _max_lux;
+    float _r, _aw, _Kff;
+    int _T, _u, _n = 3;
     int _ocupancy = 0;
     int _ff_mode = 1;
     pid_controller _pid;
 
-    double _getVolt();
-    double _volt2ohm(double v_in);
-    double _volt2lux(double v_in);
+    float _getVolt();
+    float _volt2ohm(float v_in);
+    float _volt2lux(float v_in);
 
   public:
-    light_controller(int T, int r, double Kp, double Ki, double Kaw);
+    light_controller(int T, int r, float Kp, float Ki, float Kaw);
 
     void calibrate();
     void process();
@@ -37,14 +37,14 @@ class light_controller {
     void setMaxRef();
     void setMinRef();
     int getOcupancy();
-    int getMaxRef();
-    int getMinRef();
-    int getRef();
+    float getMaxRef();
+    float getMinRef();
+    float getRef();
 
-    double getErr();
-    double getLight();
-    double getLowerIlluminance();
-    double getIlluminance();
+    float getErr();
+    float getLight();
+    float getLowerIlluminance();
+    float getIlluminance();
     int getDutyCycle();
 
     void initInterrupt();

@@ -1,6 +1,6 @@
 #include "pid_controller.h"
 
-pid_controller::pid_controller(int T, int r, double Kp, double Ki, double Kaw) {
+pid_controller::pid_controller(int T, int r, float Kp, float Ki, float Kaw) {
   _T = T;
   _r = r;
   _Kp = Kp;
@@ -13,7 +13,7 @@ void pid_controller::_deadzone() {
   else if(_e < -10) _e += 10;
 }
 
-double pid_controller::process() {
+float pid_controller::process() {
   _e = _r - _y;
   _deadzone();
   _p = _Kp * _e;
@@ -21,7 +21,7 @@ double pid_controller::process() {
   return _p + _i;
 }
 
-int pid_controller::saturate(double aw){
+int pid_controller::saturate(float aw){
   if(aw > 255){
      _i -= _Kaw*(aw - 255);
     return 255;
@@ -39,6 +39,6 @@ void pid_controller::flush(){
 
 int pid_controller::getRef(){ return _r; }
 void pid_controller::setRef(int r){ _r = r; }
-double pid_controller::getErr(){ return _e; }
-double pid_controller::getLight(){ return _y; }
-void pid_controller::setLight(double y){ _y = y; }
+float pid_controller::getErr(){ return _e; }
+float pid_controller::getLight(){ return _y; }
+void pid_controller::setLight(float y){ _y = y; }

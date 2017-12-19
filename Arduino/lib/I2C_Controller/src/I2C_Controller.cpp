@@ -24,12 +24,12 @@ void i2c_controller::broadcast(packet_t *message){
 
 void i2c_controller::send(int to, packet_t *message){
   startSession(to);
-  write(message);
+  write(message, sizeOfPacket(message->id));
   endSession();
 }
 
-void i2c_controller::write(packet_t *message){
-  Wire.write((byte*) message, sizeOfPacket(message->id));
+void i2c_controller::write(packet_t *message, int size){
+  Wire.write((byte*) message, size);
 }
 
 void i2c_controller::startSession(int to){
@@ -142,5 +142,6 @@ multiple_float_packet* i2c_controller::createMultiFloatPacket(packet_id id, int 
   p->id = id;
   p->src = src;
   p->dest = dest;
+  p->n_data = n_data;
   return p;
 }
