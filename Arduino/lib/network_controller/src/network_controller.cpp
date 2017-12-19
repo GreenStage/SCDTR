@@ -463,6 +463,7 @@ void network_controller::consensus(){
   for (b_i = 0; b_i < 2; b_i++) { a += _K[b_i] * d[b_i]; }
 
   _R = a + _O;
+  _lc.setRef(_R);
 }
 
 

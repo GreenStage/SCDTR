@@ -36,6 +36,7 @@ class light_controller {
     void setLight(int dc);
     void setMaxRef();
     void setMinRef();
+    void setRef(float r);
     int getOcupancy();
     float getMaxRef();
     float getMinRef();

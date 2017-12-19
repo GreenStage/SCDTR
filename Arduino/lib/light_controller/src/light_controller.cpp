@@ -42,6 +42,7 @@ float light_controller::getLight(){ return _volt2lux(_getVolt()); }
 float light_controller::getIlluminance() { return _pid.getLight(); }
 int light_controller::getDutyCycle(){ return _u; }
 
+void light_controller::setRef(float r){ _r = r; };
 void light_controller::setMaxRef() { _ocupancy = 1; _r = 2*255/3; }
 void light_controller::setMinRef() { _ocupancy = 0; _r = 255/3; }
 int light_controller::getOcupancy() { return _ocupancy; }
