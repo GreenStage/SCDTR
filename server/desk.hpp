@@ -58,6 +58,7 @@ private:
     float acumulated_confort_variance;
     float power_consumption;
     float control_reference;
+
 };
 
 #endif

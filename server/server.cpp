@@ -3,7 +3,8 @@
 #include "defs.h"
 #include "utils.hpp"
 
-#define SERVER_TCP_PORT 13
+#define SERVER_TCP_PORT 13 
+
 
 Server::Server(boost::asio::io_service& io_service,DataManager * dManager)
     : acceptor_( io_service, tcp::endpoint(tcp::v4(), SERVER_TCP_PORT) ){
@@ -62,7 +63,8 @@ void Session::handle_write(const boost::system::error_code& error,
 
 }
 
-void Session::write(string message{
+void Session::write(string message){
+
     boost::asio::async_write(socket_, boost::asio::buffer(message.append("\n")),
         boost::bind(&Session::handle_write, shared_from_this(),
           boost::asio::placeholders::error,
@@ -71,9 +73,10 @@ void Session::write(string message{
         
 void Session::handle_read(const boost::system::error_code& error,size_t bytes_read){
 	string message_read_;
+	function <void(string)> fp = std::bind(&Session::write,this,placeholders::_1);
+	
     if(error &&  error != boost::asio::error::eof){
 		cout << "Error occurred: " << error.message() << std::endl;
-
         return;
     }
 	istream is(&input_buffer_);
@@ -85,10 +88,16 @@ void Session::handle_read(const boost::system::error_code& error,size_t bytes_re
 
 		cout << "Received: " << message_read_ << endl;
 #endif
-
-		write(dManager_->parse_command(explode(message_read_,' '));
+		try{
+			message_read_ = dManager_->parse_command(fp,explode(message_read_,' '));
+			cout << "ts" << message_read_ << endl;
+			write(message_read_);
+		}catch(string e ){
+			cout << "Error" << e << endl;
+		}
+		
 	}
-
+	else write("");
 
 	boost::asio::async_read_until(socket_,input_buffer_,'\n',
 		boost::bind(&Session::handle_read,shared_from_this(),boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred)

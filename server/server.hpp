@@ -1,6 +1,6 @@
 #ifndef SERVER_HEADER
 #define SERVER_HEADER
-#include <ctime>
+#include <ctime> 
 #include <iostream>
 #include <string>
 #include <boost/bind.hpp>
@@ -27,14 +27,14 @@ public:
 private:
 
     Session(boost::asio::io_service& service,DataManager * dManager);
-
-
+	bool streaming = false;
+	
 	void handle_read(const boost::system::error_code& error,size_t bytes_read);
 
     void handle_write(const boost::system::error_code& /*error*/, size_t /*bytes_transferred*/);
-
+	
     tcp::socket socket_;
-
+	bool read = true;
     boost::asio::streambuf input_buffer_;
     DataManager * dManager_;
 };
@@ -44,6 +44,7 @@ class Server{
 public:
     Server(boost::asio::io_service& io_service,DataManager* dManager);
 
+	void terminate(int);
 private:
     void start_accept();
     void handle_accept(Session::pointer, const boost::system::error_code&);
