@@ -1,55 +1,22 @@
 #include <Arduino.h>
-#include <Light_Controller.h>
+#include "light_controller.h"
+#include "i2c_controller.h"
+#include "network_controller.h"
 
-#define BUTTON_PIN 8
-Light_Controller lightController;
+extern light_controller lc;
+extern i2c_controller i2c;
+extern network_controller nc;
 
 void setup() {
-  Serial.begin(9600);  // start serial for output
-  pinMode(BUTTON_PIN, INPUT);
-  lightController.calibrate();
+    Serial.begin(9600);
+    nc.init();
+    nc.calibrate();
+    //nc.consensus();
+    lc.calibrate();
+    lc.initInterrupt();
 }
 
-// Loop variables
-unsigned long startTime, endTime;
-
-int in, out;
-int incoming;
-int state = 0;
-int newState, oldState;
-
-void loop() {
-  startTime = millis();
-  lightController.process();
-
-  newState = digitalRead(BUTTON_PIN);
-  if(newState != oldState && oldState){
-    state = state ? 0 : 1;
-    state ? lightController.setHighRef() : lightController.setLowRef();
-  }
-  oldState = newState;
-
-  if (Serial.available() > 0) {
-    // read the incoming byte:
-    incoming = Serial.read();
-    switch(incoming){
-      case 49:
-        lightController.setLowRef();
-        state = 0;
-        break;
-      case 50:
-        lightController.setHighRef();
-        state = 1;
-        break;
-      case 51:
-        lightController.toggleFeedForward();
-        break;
-      case 52:
-        lightController.calibrate();
-        break;
-    }
-  }
-
-  endTime = millis();
-  delay(lightController.getPeriod() - (endTime - startTime));
+void loop()
+{
+  nc.process();
 }

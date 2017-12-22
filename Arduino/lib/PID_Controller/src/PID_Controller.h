@@ -1,37 +1,29 @@
 #ifndef PID_H
 #define PID_H
 
-class PID_Controller {
+#include "Arduino.h"
+
+class pid_controller {
   private:
-    int _Ts, _r, _ff_mode;
-    float _y, _e, _p, _i, _d, _aw, _u, _ff;
-    float _y_prev, _e_prev, _i_prev, _d_prev;
-    double _K, _K1, _K2, _K3, _K4, _Kff;
+    int _T, _r, _u;
+    float _Kp, _Ki, _Kaw;
+    float _y, _e, _p, _i, _aw;
+    float _y_prev, _e_prev, _i_prev;
 
     void _deadzone();
-    void _saturate();
-
   public:
     // Constructor
-    PID_Controller(int T, int r, double Kp, double Ki, double Kd, int a, int b);
+    pid_controller(int T, int r, float Kp, float Ki, float Kaw);
 
-    // Getters
-    int getRef();
-    int getMin();
-    int getMax();
-
-    // Setters
-    void incRef(int v);
-    void decRef(int v);
-    void setRef(int r);
-    void setPeriod(int T);
-    void setFFGain(int Kff);
-    void setGains(double Kp, double Ki, double Kd, int a, int b);
-
-    // Commands
-    void sample(float y);
-    int process();
+    float process();
+    int saturate(float aw);
     void flush();
+
+    int getRef();
+    void setRef(int r);
+    float getErr();
+    float getLight();
+    void setLight(float y);
 };
 
 #endif
