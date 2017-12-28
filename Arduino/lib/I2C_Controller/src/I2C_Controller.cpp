@@ -1,15 +1,5 @@
-#include "Arduino.h"
-#include "EEPROM.h"
-#include "Wire.h"
 #include "i2c_controller.h"
-
-i2c_controller i2c;
-
-void i2c_controller::init(void (*cb)(int)){
-  Wire.begin(getId());
-  TWAR = (getId() << 1) | 1;
-  onReceive(cb);
-}
+#include "EEPROM.h"
 
 int ID_ADDRESS = 0;
 int i2c_controller::getId(){
@@ -17,19 +7,69 @@ int i2c_controller::getId(){
   return _id;
 }
 
-byte i2c_controller::read(){ return Wire.read(); }
+void i2c_controller::init(void (*cb)(int)){
+  int id = getId();
+  Wire.begin(id);
+  TWAR = (id << 1) | 1;
+  onReceive(cb);
+}
 
-void i2c_controller::broadcast(packet_t *message){
+void i2c_controller::onReceive(void (*cb)(int)){
+  Wire.onReceive(cb);
+}
+
+int i2c_controller::messageSize(int type){
+  switch(type){
+    case MULTI_FLOAT:
+      return sizeof(multi_float_message_t);
+    case MULTI_BYTE:
+      return sizeof(multi_byte_message_t);
+    case SIMPLE:
+      return sizeof(message_t);
+    case FLOAT:
+      return sizeof(float_message_t);
+    case BYTE:
+      return sizeof(byte_message_t);
+    default:
+      return 0;
+  }
+}
+
+message_type i2c_controller::getMessageType(message_id id){
+  switch(id){
+    case BASE:
+      return SIMPLE;
+    default:
+      return NULL;
+  }
+}
+
+int size;
+byte message_buffer[100];
+message_t *message, *new_message;
+message_t *i2c_controller::read(int numBytes){
+  for(int i=0; i<numBytes; i++) message_buffer[i] = Wire.read();
+  message = (message_t*) message_buffer;
+
+  size = messageSize(getMessageType(message->id));
+
+  new_message = (message_t*) malloc(size);
+  for(int i=0; i<size; i++) new_message[i] = message[i];
+  return new_message;
+}
+
+
+void i2c_controller::broadcast(message_t *message){
   send(0, message);
 }
 
-void i2c_controller::send(int to, packet_t *message){
+void i2c_controller::send(int to, message_t *message){
   startSession(to);
-  write(message, sizeOfPacket(message->id));
+  write(message, messageSize(message->id));
   endSession();
 }
 
-void i2c_controller::write(packet_t *message, int size){
+void i2c_controller::write(message_t *message, int size){
   Wire.write((byte*) message, size);
 }
 
@@ -41,108 +81,46 @@ void i2c_controller::endSession(){
   Wire.endTransmission();
 }
 
-void i2c_controller::onReceive(void (*cb)(int)){
-  Wire.onReceive(cb);
+message_t *i2c_controller::simpleMessage(message_id id, int src, int dest){
+  message_t *message = (message_t*) malloc(sizeof(message_t));
+  message->id = id;
+  message->src = src;
+  message->dest = dest;
+  return message;
 }
 
-packet_id i2c_controller::responseOf(packet_id id){
-  switch(id){
-    case RASP_ILU:               return ARD_ILU;
-    case RASP_DUTY_CICLE:        return ARD_DUTY_CICLE;
-    case RASP_LOWER_ILUMINANCE:  return ARD_LOWER_ILUMINANCE;
-    case RASP_ACC_ENERGY:        return ARD_ACC_ENERGY;
-    case RASP_ACC_CONFORT_ERR:   return ARD_ACC_CONFORT_ERR;
-    case RASP_ACC_CONFORT_VAR:   return ARD_ACC_CONFORT_VAR;
-    case RASP_POW_CONSUP:        return ARD_POW_CONSUP;
-    case RASP_EXT_ILU:           return ARD_EXT_ILU;
-    case RASP_ILU_CTR:           return ARD_ILU_CTR;
-    case RASP_OCCUPANCY:         return ARD_OCCUPANCY;
-    default:                     return PACKET_NONE;
-  }
+byte_message_t *i2c_controller::singleByteMessage(message_id id, int src, int dest, uint8_t data){
+  byte_message_t *message = (byte_message_t*) malloc(sizeof(byte_message_t));
+  message->id = id;
+  message->src = src;
+  message->dest = dest;
+  message->data = data;
+  return message;
 }
 
-int i2c_controller::sizeOfPacket(packet_id id){
-  int packet_size = sizeof(packet_t);
-  int single_byte = sizeof(single_byte_packet);
-  int single_float = sizeof(single_float_packet);
-  int multi_float = sizeof(multiple_float_packet);
-  switch(id){
-    case ARD_M_ILU:
-    case ARD_M_DUTY_CICLE:
-      return multi_float;
-    case ARD_ILU:
-    case ARD_LOWER_ILUMINANCE:
-    case ARD_ACC_ENERGY:
-    case ARD_ILU_CTR:
-    case ARD_ACC_CONFORT_ERR:
-    case ARD_ACC_CONFORT_VAR:
-    case ARD_POW_CONSUP:
-    case ARD_EXT_ILU:
-    case ARD_TIME_RUNNING:
-      return single_float;
-    case ARD_DUTY_CICLE:
-    case ARD_OCCUPANCY:
-      return single_byte;
-    case RASP_ILU:
-    case RASP_DUTY_CICLE:
-    case RASP_ACC_ENERGY:
-    case RASP_LOWER_ILUMINANCE:
-    case RASP_ACC_CONFORT_ERR:
-    case RASP_ACC_CONFORT_VAR:
-    case RASP_POW_CONSUP:
-    case RASP_EXT_ILU:
-    case RASP_ILU_CTR:
-    case RASP_OCCUPANCY:
-    case RASP_RESTART:
-    case RASP_SET_NOT_OCCUP:
-    case RASP_SET_OCCUP:
-    case RASP_M_ILU:
-    case RASP_M_DUTY_CICLE:
-    case RASP_START_ILU:
-    case RASP_START_DUTY_CICLE:
-    case RASP_STOP_ILU:
-    case RASP_STOP_DUTY_CICLE:
-    case RASP_TIME_RUNNING:
-    case ARD_INIT_CAL:
-    case ARD_SYNC:
-    case ARD_ADDR:
-    case PACKET_NONE:
-    default:
-      return packet_size;
-  }
+float_message_t *i2c_controller::singleFloatMessage(message_id id, int src, int dest, float data){
+  float_message_t *message = (float_message_t*) malloc(sizeof(float_message_t));
+  message->id = id;
+  message->src = src;
+  message->dest = dest;
+  message->data = data;
+  return message;
 }
 
-packet_t* i2c_controller::createPacket(packet_id id, int src, int dest){
-  packet_t *p = (packet_t*) malloc(sizeof(packet_t));
-  p->id = id;
-  p->src = src;
-  p->dest = dest;
-  return p;
+multi_byte_message_t *i2c_controller::multiByteMessage(message_id id, int src, int dest, int size){
+  multi_byte_message_t *message = (multi_byte_message_t*) malloc(sizeof(multi_byte_message_t)-(MAX_LEN-size)*sizeof(uint8_t));
+  message->id = id;
+  message->src = src;
+  message->dest = dest;
+  message->len = size;
+  return message;
 }
 
-single_byte_packet* i2c_controller::createSingleBytePacket(packet_id id, int src, int dest, uint8_t val){
-  single_byte_packet *p = (single_byte_packet*) malloc(sizeof(single_byte_packet));
-  p->id = id;
-  p->src = src;
-  p->dest = dest;
-  p->val = val;
-  return p;
-}
-
-single_float_packet* i2c_controller::createSingleFloatPacket(packet_id id, int src, int dest, float val){
-  single_float_packet *p = (single_float_packet*) malloc(sizeof(single_float_packet));
-  p->id = id;
-  p->src = src;
-  p->dest = dest;
-  p->val = val;
-  return p;
-}
-
-multiple_float_packet* i2c_controller::createMultiFloatPacket(packet_id id, int src, int dest, int n_data){
-  multiple_float_packet *p = (multiple_float_packet*) malloc(sizeof(multiple_float_packet));
-  p->id = id;
-  p->src = src;
-  p->dest = dest;
-  p->n_data = n_data;
-  return p;
+multi_float_message_t *i2c_controller::multiFloatMessage(message_id id, int src, int dest, int size){
+  multi_float_message_t *message = (multi_float_message_t*) malloc(sizeof(multi_float_message_t)-(MAX_LEN-size)*sizeof(float));
+  message->id = id;
+  message->src = src;
+  message->dest = dest;
+  message->len = size;
+  return message;
 }

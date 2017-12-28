@@ -36,7 +36,6 @@ void onReceive(int numBytes){
 }
 
 int network_controller::arduino_request(packet_t* req){
-  Serial.println("Cenas");
   switch(req->id){
     case ARD_CONSENSUS: {
       multiple_float_packet *p = (multiple_float_packet*) req;

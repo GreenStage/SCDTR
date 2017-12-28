@@ -1,12 +1,15 @@
+
 #ifndef I2C_H
 #define I2C_H
 
 #include "Arduino.h"
+#include "Wire.h"
 
-#define MAX_LEN 60
+#define MAX_LEN 100
 
-enum packet_id {
-  PACKET_NONE = 0,
+enum message_id {
+  BASE = 0,
+
   RASP_MIN = 0x40,
   RASP_ILU,
   RASP_DUTY_CICLE,
@@ -53,70 +56,77 @@ enum packet_id {
   ARD_MAX
 };
 
-typedef struct send_single_float_ {
+enum message_type {
+  MULTI_FLOAT,
+  MULTI_BYTE,
+  SIMPLE,
+  FLOAT,
+  BYTE
+};
+
+typedef struct multi_float_message_t_ {
   uint8_t src;
   uint8_t dest;
-  packet_id id;
-  float val;
-} __attribute__((__packed__)) single_float_packet;
+  message_id id;
+  uint8_t len;
+  float data[MAX_LEN];
+} __attribute__((__packed__)) multi_float_message_t;
 
-//partilha o vector das iterações do consesus
-typedef struct _send_multiple_float{
-    uint8_t src;
-    uint8_t dest;
-    packet_id id;
-    uint8_t n_data;
-    float val[MAX_LEN];
-} __attribute__((__packed__)) multiple_float_packet;
-
-typedef struct send_single_byte_ {
+typedef struct multi_byte_message_t_ {
   uint8_t src;
   uint8_t dest;
-  packet_id id;
-  uint8_t val;
-}__attribute__((__packed__)) single_byte_packet;
+  message_id id;
+  uint8_t len;
+  uint8_t data[MAX_LEN];
+} __attribute__((__packed__)) multi_byte_message_t;
 
-//partilhar o vector da rede
-typedef struct _network_resp_ {
-    uint8_t src;
-    uint8_t dest;
-    packet_id id;
-    uint8_t n_data;
-    uint8_t val[MAX_LEN];
-} __attribute__((__packed__)) network_packet;
-
-typedef struct packet_t_ {
+typedef struct float_message_t_ {
   uint8_t src;
   uint8_t dest;
-  packet_id id;
-} __attribute__((__packed__)) packet_t;
+  message_id id;
+  float data;
+} __attribute__((__packed__)) float_message_t;
 
-#define MAX_PACKET_SIZE sizeof(single_float_packet)
+typedef struct byte_message_t_ {
+  uint8_t src;
+  uint8_t dest;
+  message_id id;
+  uint8_t data;
+} __attribute__((__packed__)) byte_message_t;
+
+typedef struct message_t_ {
+  uint8_t src;
+  uint8_t dest;
+  message_id id;
+} __attribute__((__packed__)) message_t;
 
 class i2c_controller {
   private:
     int _id;
 
   public:
-    void init(void (*cb)(int));
-
     int getId();
 
-    int sizeOfPacket(packet_id id);
-    packet_id responseOf(packet_id id);
+    int messageSize(int type);
+
+    void init(void (*cb)(int));
+    void onReceive(void (*cb)(int));
+    message_type getMessageType(message_id id);
 
     void startSession(int to);
     void endSession();
-    byte read();
-    void write(packet_t *message, int size);
-    void broadcast(packet_t *message);
-    void send(int to, packet_t *message);
-    void onReceive(void (*cb)(int));
 
-    packet_t* createPacket(packet_id id, int src, int dest);
-    single_byte_packet* createSingleBytePacket(packet_id id, int src, int dest, uint8_t val);
-    single_float_packet* createSingleFloatPacket(packet_id id, int src, int dest, float val);
-    multiple_float_packet* createMultiFloatPacket(packet_id id, int src, int dest, int n_data);
+    message_t* read(int numBytes);
+    void write(message_t *message, int size);
+
+    void broadcast(message_t *message);
+    void send(int to, message_t *message);
+
+    message_t* simpleMessage(message_id id, int src, int dest);
+    byte_message_t* singleByteMessage(message_id id, int src, int dest, uint8_t data);
+    float_message_t* singleFloatMessage(message_id id, int src, int dest, float data);
+    multi_byte_message_t* multiByteMessage(message_id id, int src, int dest, int size);
+    multi_float_message_t* multiFloatMessage(message_id id, int src, int dest, int size);
 };
 
 #endif

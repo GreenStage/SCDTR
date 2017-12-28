@@ -11,18 +11,19 @@ class pid_controller {
     float _y_prev, _e_prev, _i_prev;
 
     void _deadzone();
+    
   public:
-    // Constructor
     pid_controller(int T, int r, float Kp, float Ki, float Kaw);
 
-    float process();
-    int saturate(float aw);
     void flush();
+    float process();
+    int saturate(float y);
 
     int getRef();
-    void setRef(int r);
     float getErr();
     float getLight();
+
+    void setRef(int r);
     void setLight(float y);
 };
 

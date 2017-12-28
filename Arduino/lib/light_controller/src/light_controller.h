@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "TimerOne.h"
 #include "pid_controller.h"
+#include "state_controller.h"
 
 #define LDR_PIN A0
 #define LED_PIN 9
@@ -16,41 +17,26 @@
 
 class light_controller {
   private:
-    float _min_lux, _max_lux;
-    float _r, _aw, _Kff;
-    int _T, _u, _n = 3;
-    int _ocupancy = 0;
-    int _ff_mode = 1;
     pid_controller _pid;
+    state_controller &_state;
 
     float _getVolt();
-    float _volt2ohm(float v_in);
-    float _volt2lux(float v_in);
+    float _volt2ohm(float v);
+    float _volt2lux(float v);
 
   public:
-    light_controller(int T, int r, float Kp, float Ki, float Kaw);
+    light_controller(state_controller &state);
 
+    void init(void (*cb)());
     void calibrate();
     void process();
 
-    void setLight(int dc);
-    void setMaxRef();
-    void setMinRef();
-    void setRef(float r);
-    int getOcupancy();
-    float getMaxRef();
-    float getMinRef();
-    float getRef();
-
-    float getErr();
+    void setLight(int u);
     float getLight();
-    float getLowerIlluminance();
-    float getIlluminance();
-    int getDutyCycle();
 
-    void initInterrupt();
     void startInterrupt();
     void stopInterrupt();
+    void initInterrupt();
 };
 
 #endif
