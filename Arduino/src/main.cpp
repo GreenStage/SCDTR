@@ -33,7 +33,7 @@ void lightInterrupt(){
 }
 
 // I2C Async message receiving
-void messageInterupt(int numBytes){
+void messageInterupt(int numBytes) {
   message_t *message = i2c.read(numBytes);
   // Process arduino messages
   if((message->id & 0xC0) == 0x80) a2a.handleReceive(message);
@@ -43,7 +43,7 @@ void messageInterupt(int numBytes){
 
 void setup() {
   Serial.begin(9600);
-  // Initialize state with default variables
+  // Initialize state with default values
   state.init();
   // Initialize light controller with interruption
   lc.init(lightInterrupt);

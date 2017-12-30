@@ -5,92 +5,169 @@ a2a_controller::a2a_controller(state_controller& state, i2c_controller& i2c, lig
 void a2a_controller::process(){
     if(_state.network_state == 0) initNetwork();
     if(_state.calibration_state == 0) calibrate();
-    if(_state.consensus_state == 0) consensus();
+    // if(_state.consensus_state == 0) consensus();
 }
 
 void a2a_controller::_sync(){
-  _sync_ctr++;
-  while(_sync_ctr < _state.net_size);
-  _sync_ctr = 0;
+  message_t *message = _i2c.simpleMessage(ARD_SYNC, _i2c.getId(), 0);
+  _state.sync_ctr++;
+  _i2c.broadcast(message);
+  while(_state.calibration_state == 1 && _state.sync_ctr < _state.net_size);
+  _state.sync_ctr = 0;
+  Serial.println("Done");
+  free(message);
 }
 
 void a2a_controller::handleConsensus(multi_byte_message_t *message) {
-  //actualiza a cópia dos valores do vizinho
-  for(int i=0;_state.net_size-1;i++){
-    _state.dc_copy[i]=message->data[i];
-  }
-  _state.dc_flag=true;
+  // actualiza a cópia dos valores do vizinho
+  for(int i=0; _state.net_size-1; i++) { _state.dc_copy[i] = message->data[i]; }
+  _state.dc_flag = true;
+}
+
+void a2a_controller::handleNetHello(message_t *message) {
+  if(_state.network_state == 2) {
+     _state.network_state = 0;
+     _state.net_size = 0;
+   }
 }
 
 void a2a_controller::handleNetAddr(message_t *message) {
-  int i;
-  _state.addNodeToNetwork(message->src);
-  if(_state.network_state == 1) { _state.timeout = millis() + 100; }
-  else if(_state.network_state == 2) {
-    for(i=0; i<_state.net_size && _state.net[i]!=message->src; i++);
-    if(i != _state.net_size) _state.network_state = 0;
-    _state.calibration_state = 0;
+  if(_state.network_state != 2) {
+    _state.addNodeToNetwork(message->src);
+    if(_state.network_state == 1) { _state.timeout = millis() + 100; }
   }
 }
 
 void a2a_controller::handleReceive(message_t *message) {
-  bool respond = false;
+  Serial.print("Message: ");
+  Serial.println(message->id, HEX);
   switch(message->id){
     case ARD_CONSENSUS:
       handleConsensus((multi_byte_message_t *) message);
       break;
+    case ARD_HELLO:
+      Serial.println("Hello");
+      handleNetHello(message);
+      break;
     case ARD_ADDR:
+      Serial.println("Addr");
       handleNetAddr(message);
       break;
     case ARD_SYNC:
-      _sync_ctr++;
+      _state.sync_ctr++;
       break;
     default:
       break;
   }
-  if(respond) _state.addInMessage(message);
 }
 
 void a2a_controller::initNetwork() {
-  _state.net_size = 0;
+  message_t *message;
+  int id = _i2c.getId();
+  // Wait for addr requests
   _state.network_state = 1;
+
+  // Create hello message
+  message = _i2c.simpleMessage(ARD_HELLO, id, 0);
+
+  // Broadcast hello message
+  _i2c.broadcast(message);
+
+  // Release message memory space
+  free(message);
+
+  // Create address message
+  message = _i2c.simpleMessage(ARD_ADDR, id, 0);
+
+  // Wait to make sure others have updated their state after receiving the hello message
+  delay(100+10*random(10));
+
+  // Start I2C session to maintain atomicity
+  _i2c.startSession(0);
+
+  // Add own id to the network
+  _state.addNodeToNetwork(id);
+
+  // Update own network index
+  _state.net_index = _state.net_size-1;
+
+  // Send address to all arduinos
+  _i2c.write(message, _i2c.messageSize(_i2c.messageType(ARD_ADDR)));
+
+  // End I2C session
+  _i2c.endSession();
+
+  // Release message memory space
+  free(message);
+
+  // Prepare timeout
+  _state.currentTime = millis();
+  // Wait a sec
+  _state.timeout = _state.currentTime + 100;
+
+  // Wait for the rest
+  while(_state.currentTime < _state.timeout){ _state.currentTime = millis(); }
+
+  // Update state
+  _state.network_state = 2;
   _state.calibration_state = 0;
   _state.consensus_state = 0;
-  message_t *out_message = _i2c.simpleMessage(ARD_ADDR, 0, _i2c.getId());
-  delay(10*random(10));
-  _i2c.startSession(0);
-  _state.addNodeToNetwork(_i2c.getId());
-  _i2c.write(out_message, _i2c.messageSize(ARD_ADDR));
-  _i2c.endSession();
-  free(out_message);
-  _state.currentTime = millis();
-  _state.timeout = _state.currentTime + 100;
-  while(_state.currentTime > _state.timeout){ _state.currentTime = millis(); }
-  _state.network_state = 2;
+  printNet();
+}
+
+void a2a_controller::printNet(){
+  Serial.print("Index: ");
+  Serial.println(_state.net_index);
+  Serial.println("Rede:");
+  for(int i=0; i<_state.net_size; i++){
+    Serial.println(_state.net[i]);
+  }
+}
+
+void a2a_controller::printCalib(){
+  Serial.println("My offset lighting is:");
+  Serial.print(_state.O);
+  Serial.println(" lux");
+  Serial.println("My max lighting is:");
+  Serial.print(_state.M);
+  Serial.println(" lux");
+  Serial.println("My calibration K's are:");
+  for(int i=0; i<_state.net_size; i++){
+    Serial.println(_state.K[i]);
+    Serial.println(" lux");
+  }
+}
+
+void a2a_controller::printConse(float *d){
+  Serial.println("Reached a Consensus with these values:");
+  for(int i=0; i<_state.net_size; i++){
+    Serial.print(d[i]);
+    Serial.print(" duty cicle for Ard nº ");
+    Serial.println(i);
+  }
 }
 
 void a2a_controller::calibrate() {
   _state.consensus_state = 0;
   _state.calibration_state = 1;
-  int id = _i2c.getId();
 
   _state.K = new float[_state.net_size];
 
   _lc.setLight(0);
-  delay(20);
-
+  delay(_state.T);
   _state.O = _lc.getLight();
-
   _sync();
+
   for(int i = 0; i < _state.net_size; i++){
-    if(i == id) _lc.setLight(255);
-    delay(20);
+    if(i == _state.net_index) _lc.setLight(255);
+    delay(_state.T);
     _state.M = _lc.getLight();
     _state.K[i] = (_state.M - _state.O) / 255;
     _sync();
-    if(i == id) _lc.setLight(0);
+    if(i == _state.net_index) _lc.setLight(0);
   }
   _state.calibration_state = 2;
+  printCalib();
 }
 
 void a2a_controller::consensus(){
@@ -306,4 +383,6 @@ void a2a_controller::consensus(){
   for (b_i = 0; b_i < 2; b_i++) { a += _state.K[b_i] * d[b_i]; }
 
   _state.R = a + _state.O;
+
+  printConse(d);
 }

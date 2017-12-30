@@ -15,14 +15,14 @@ class state_controller {
   public:
     int *net;
     int net_index;
-    int net_size = 0;
+    int net_size;
 
-    int L_stream_state = 0; // 0 - off; 1 - on
-    int D_stream_state = 0; // 0 - off; 1 - on
+    int L_stream_state; // 0 - off; 1 - on
+    int D_stream_state; // 0 - off; 1 - on
 
-    int network_state = 0; // 0 - uninitialized; 1 - initializing; 2 - initilized
-    int consensus_state = 0; // 0 - unexchanged; 1 - exchanging; 2 - exchanged
-    int calibration_state = 0; // 0 - Uncalibrated; 1 - calibrating; 2 - calibrated
+    int network_state; // 0 - uninitialized; 1 - initializing; 2 - initilized
+    int consensus_state; // 0 - unexchanged; 1 - exchanging; 2 - exchanged
+    int calibration_state; // 0 - Uncalibrated; 1 - calibrating; 2 - calibrated
 
     int D, N, T;
     float *K, Kff, AW;
@@ -32,10 +32,9 @@ class state_controller {
     CircularBuffer<int, 60> D_M;
     CircularBuffer<float, 60> L_M;
 
-    int ctr = 0;
+    int ctr, sync_ctr;
 
-    unsigned long timeout;
-    unsigned long startTime = millis();
+    unsigned long startTime, timeout;
     unsigned long currentTime, lastTime;
 
     bool ocupancy;

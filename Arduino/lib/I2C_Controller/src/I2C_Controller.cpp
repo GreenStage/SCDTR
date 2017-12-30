@@ -3,14 +3,18 @@
 
 int ID_ADDRESS = 0;
 int i2c_controller::getId(){
+  // Get id from eeprom if it doesn't already exist
   if(!_id){ _id = EEPROM.read(ID_ADDRESS); }
   return _id;
 }
 
 void i2c_controller::init(void (*cb)(int)){
   int id = getId();
+  // Start wire communications
   Wire.begin(id);
+  // Listen to broadcast
   TWAR = (id << 1) | 1;
+  // Register received message callback
   onReceive(cb);
 }
 
@@ -18,7 +22,8 @@ void i2c_controller::onReceive(void (*cb)(int)){
   Wire.onReceive(cb);
 }
 
-int i2c_controller::messageSize(int type){
+// Get message size from type
+int i2c_controller::messageSize(message_type type){
   switch(type){
     case MULTI_FLOAT:
       return sizeof(multi_float_message_t);
@@ -35,10 +40,56 @@ int i2c_controller::messageSize(int type){
   }
 }
 
-message_type i2c_controller::getMessageType(message_id id){
+// Get message type from id
+message_type i2c_controller::messageType(message_id id){
   switch(id){
     case BASE:
+    case RASP_ILU:
+    case RASP_DUTY_CICLE:
+    case RASP_LOWER_ILUMINANCE:
+    case RASP_ACC_ENERGY:
+    case RASP_ACC_CONFORT_ERR:
+    case RASP_ACC_CONFORT_VAR:
+    case RASP_POW_CONSUP:
+    case RASP_EXT_ILU:
+    case RASP_ILU_CTR:
+    case RASP_OCCUPANCY:
+    case RASP_SET_NOT_OCCUP:
+    case RASP_SET_OCCUP:
+    case RASP_M_ILU:
+    case RASP_M_DUTY_CICLE:
+    case RASP_START_ILU:
+    case RASP_START_DUTY_CICLE:
+    case RASP_STOP_ILU:
+    case RASP_STOP_DUTY_CICLE:
+    case RASP_RESTART:
+    case RASP_TIME_RUNNING:
+    case RASP_MAX:
+    case ARD_ADDR:
+    case ARD_SYNC:
+    case ARD_INIT_CAL:
+    case ARD_HELLO:
       return SIMPLE;
+    case ARD_ILU:
+    case ARD_EXT_ILU:
+    case ARD_ILU_CTR:
+    case ARD_POW_CONSUP:
+    case ARD_ACC_ENERGY:
+    case ARD_TIME_RUNNING:
+    case ARD_ACC_CONFORT_VAR:
+    case ARD_ACC_CONFORT_ERR:
+    case ARD_LOWER_ILUMINANCE:
+      return FLOAT;
+    case ARD_OCCUPANCY:
+    case ARD_DUTY_CICLE:
+    case ARD_DC:
+      return BYTE;
+    case ARD_M_ILU:
+      return MULTI_FLOAT;
+    case ARD_NETWORK:
+    case ARD_CONSENSUS:
+    case ARD_M_DUTY_CICLE:
+      return MULTI_BYTE;
     default:
       return NULL;
   }
@@ -48,12 +99,17 @@ int size;
 byte message_buffer[100];
 message_t *message, *new_message;
 message_t *i2c_controller::read(int numBytes){
+  // Read message from bus to buffer
   for(int i=0; i<numBytes; i++) message_buffer[i] = Wire.read();
   message = (message_t*) message_buffer;
+  
+  // Get message size
+  size = messageSize(messageType(message->id));
 
-  size = messageSize(getMessageType(message->id));
-
+  // Allocate space for message
   new_message = (message_t*) malloc(size);
+
+  // Copy message
   for(int i=0; i<size; i++) new_message[i] = message[i];
   return new_message;
 }
@@ -65,7 +121,7 @@ void i2c_controller::broadcast(message_t *message){
 
 void i2c_controller::send(int to, message_t *message){
   startSession(to);
-  write(message, messageSize(message->id));
+  write(message, messageSize(messageType(message->id)));
   endSession();
 }
 

@@ -30,7 +30,29 @@ void state_controller::process() {
 }
 
 void state_controller::init() {
+  net_size = 0;
 
+  L_stream_state = 0;
+  D_stream_state = 0;
+
+  network_state = 0;
+  consensus_state = 0;
+  calibration_state = 0;
+
+  N = 3;
+  T = 40;
+
+  E = 0;
+  CE = 0;
+  CV = 0;
+
+  startTime = millis();
+
+  ocupancy = false;
+  ff_mode = true;
+
+  ctr = 0;
+  sync_ctr = 0;
 }
 
 // // Messaging methods
@@ -46,10 +68,10 @@ void state_controller::addInMessage(message_t *message) { return _in_messages.en
 void state_controller::addOutMessage(message_t *message) { return _out_messages.enqueue(message); }
 
 void state_controller::addNodeToNetwork(int id){
-  int *aux = new int[++net_size];
-  for(int i = 0; i < net_size-1; i++){ aux[i] = net[i]; }
+  int *aux = new int[net_size+1];
+  for(int i = 0; i < net_size; i++){ aux[i] = net[i]; }
   aux[net_size] = id;
   free(net);
   net = aux;
-  net_index = net_size;
+  net_size++;
 }

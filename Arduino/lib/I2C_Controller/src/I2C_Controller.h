@@ -50,9 +50,11 @@ enum message_id {
   ARD_TIME_RUNNING,
   ARD_ADDR,
   ARD_DC,
+
   ARD_INIT_CAL,
   ARD_SYNC,
   ARD_CONSENSUS,
+  ARD_HELLO,
   ARD_MAX
 };
 
@@ -107,11 +109,11 @@ class i2c_controller {
   public:
     int getId();
 
-    int messageSize(int type);
+    int messageSize(message_type type);
 
     void init(void (*cb)(int));
     void onReceive(void (*cb)(int));
-    message_type getMessageType(message_id id);
+    message_type messageType(message_id id);
 
     void startSession(int to);
     void endSession();
