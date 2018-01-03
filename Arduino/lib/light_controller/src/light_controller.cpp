@@ -5,7 +5,7 @@ const float V2L_B = 1/LDR_SL;
 
 // Default values
 int T = 40;
-int r = 40;
+int r = 70;
 float Kp = 2.5*0.45;
 float Ki = 1.2/T;
 float Kaw = 1;
@@ -50,6 +50,3 @@ void light_controller::init(void (*cb)()){
   Timer1.initialize(_state.T);
   Timer1.attachInterrupt(cb);
 }
-
-void light_controller::startInterrupt(){ Timer1.start(); }
-void light_controller::stopInterrupt(){ Timer1.stop(); }

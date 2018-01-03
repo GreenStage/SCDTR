@@ -102,7 +102,7 @@ message_t *i2c_controller::read(int numBytes){
   // Read message from bus to buffer
   for(int i=0; i<numBytes; i++) message_buffer[i] = Wire.read();
   message = (message_t*) message_buffer;
-  
+
   // Get message size
   size = messageSize(messageType(message->id));
 

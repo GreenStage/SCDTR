@@ -9,8 +9,8 @@ pid_controller::pid_controller(int T, int r, float Kp, float Ki, float Kaw) {
 }
 
 void pid_controller::_deadzone() {
-  if(_e > 10) _e -= 10;
-  else if(_e < -10) _e += 10;
+  if(_e > 10) _e -= 5;
+  else if(_e < -10) _e += 5;
 }
 
 float pid_controller::process() {

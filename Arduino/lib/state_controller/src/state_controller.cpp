@@ -19,9 +19,11 @@ void state_controller::_processMetrics(){
 
 void state_controller::process() {
   currentTime = millis();
+
   // Ensures (at least) 1 second period
   if(currentTime - lastTime > 1000){
     _processMetrics();
+
     // Update time
     lastTime = currentTime;
     // Update counter
@@ -42,11 +44,14 @@ void state_controller::init() {
   N = 3;
   T = 40;
 
+  R = 40;
+
   E = 0;
   CE = 0;
   CV = 0;
 
   startTime = millis();
+  lastTime = startTime;
 
   ocupancy = false;
   ff_mode = true;

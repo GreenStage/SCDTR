@@ -24,7 +24,7 @@ void lightInterrupt(){
   // Update current time
   currentTime = micros();
   // Check if a period has passed since the last iteration
-  if(currentTime-lastTime > 40000){
+  if(currentTime-lastTime > 40000 && state.calibration_state == 2){
     // Process light controller
     lc.process();
     // Update iteration time
@@ -36,6 +36,8 @@ void lightInterrupt(){
 void messageInterupt(int numBytes) {
   message_t *message = i2c.read(numBytes);
   // Process arduino messages
+  Serial.print("Message: ");
+  Serial.println(message->id);
   if((message->id & 0xC0) == 0x80) a2a.handleReceive(message);
   // Process raspberry messages
   else if((message->id & 0xC0) == 0x40) r2a.handleReceive(message);

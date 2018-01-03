@@ -23,7 +23,7 @@ class a2a_controller {
 
     void handleNetAddr(message_t *message);
     void handleNetHello(message_t *message);
-    void handleConsensus(multi_byte_message_t *message);
+    void handleConsensus(multi_float_message_t *message);
 
     void initNetwork();
     void calibrate();

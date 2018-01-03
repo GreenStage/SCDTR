@@ -5,7 +5,7 @@ a2a_controller::a2a_controller(state_controller& state, i2c_controller& i2c, lig
 void a2a_controller::process(){
     if(_state.network_state == 0) initNetwork();
     if(_state.calibration_state == 0) calibrate();
-    // if(_state.consensus_state == 0) consensus();
+    if(_state.consensus_state == 0) consensus();
 }
 
 void a2a_controller::_sync(){
@@ -14,11 +14,10 @@ void a2a_controller::_sync(){
   _i2c.broadcast(message);
   while(_state.calibration_state == 1 && _state.sync_ctr < _state.net_size);
   _state.sync_ctr = 0;
-  Serial.println("Done");
   free(message);
 }
 
-void a2a_controller::handleConsensus(multi_byte_message_t *message) {
+void a2a_controller::handleConsensus(multi_float_message_t *message) {
   // actualiza a cópia dos valores do vizinho
   for(int i=0; _state.net_size-1; i++) { _state.dc_copy[i] = message->data[i]; }
   _state.dc_flag = true;
@@ -26,9 +25,12 @@ void a2a_controller::handleConsensus(multi_byte_message_t *message) {
 
 void a2a_controller::handleNetHello(message_t *message) {
   if(_state.network_state == 2) {
-     _state.network_state = 0;
-     _state.net_size = 0;
-   }
+    _state.sync_ctr = 0;
+    _state.net_size = 0;
+    _state.network_state = 0;
+    _state.consensus_state = 0;
+    _state.calibration_state = 0;
+  }
 }
 
 void a2a_controller::handleNetAddr(message_t *message) {
@@ -39,18 +41,15 @@ void a2a_controller::handleNetAddr(message_t *message) {
 }
 
 void a2a_controller::handleReceive(message_t *message) {
-  Serial.print("Message: ");
-  Serial.println(message->id, HEX);
   switch(message->id){
     case ARD_CONSENSUS:
-      handleConsensus((multi_byte_message_t *) message);
+      Serial.println("Recebi mesmo um consensus");
+      handleConsensus((multi_float_message_t *) message);
       break;
     case ARD_HELLO:
-      Serial.println("Hello");
       handleNetHello(message);
       break;
     case ARD_ADDR:
-      Serial.println("Addr");
       handleNetAddr(message);
       break;
     case ARD_SYNC:
@@ -63,8 +62,11 @@ void a2a_controller::handleReceive(message_t *message) {
 
 void a2a_controller::initNetwork() {
   message_t *message;
+
+  // Get my id
   int id = _i2c.getId();
-  // Wait for addr requests
+
+  // Update state
   _state.network_state = 1;
 
   // Create hello message
@@ -110,8 +112,6 @@ void a2a_controller::initNetwork() {
 
   // Update state
   _state.network_state = 2;
-  _state.calibration_state = 0;
-  _state.consensus_state = 0;
   printNet();
 }
 
@@ -138,6 +138,55 @@ void a2a_controller::printCalib(){
   }
 }
 
+void a2a_controller::calibrate() {
+  float M;
+  // Update state
+  _state.calibration_state = 1;
+
+  // Prepare K gains array
+  _state.K = new float[_state.net_size];
+
+  // Turn off the light
+  _lc.setLight(0);
+
+  // Wait a period
+  delay(_state.T);
+
+  // Get ambient light
+  _state.O = _lc.getLight();
+
+  // Iterate for each arduino in the  network
+  for(int i = 0; i < _state.net_size; i++){
+
+    // If it's my turn, turn the light on
+    if(i == _state.net_index) _lc.setLight(255);
+
+    // Wait a period
+    delay(_state.T);
+
+    // Read illumination
+    M = _lc.getLight();
+
+    // Compute gain
+    _state.K[i] = (M - _state.O) / 255;
+
+    // If it's my turn, update state max illumination
+    if(i == _state.net_index) _state.M = M;
+
+    // If it's my turn, turn the light off
+    if(i == _state.net_index) _lc.setLight(0);
+  }
+
+  // Compute my feedforward gain
+  _state.Kff = _state.K[_state.net_index];
+
+  _state.R = _state.ocupancy ? 2 * _state.M / 3 : _state.M / 3;
+
+  // Update state
+  _state.calibration_state = 2;
+  printCalib();
+}
+
 void a2a_controller::printConse(float *d){
   Serial.println("Reached a Consensus with these values:");
   for(int i=0; i<_state.net_size; i++){
@@ -147,31 +196,7 @@ void a2a_controller::printConse(float *d){
   }
 }
 
-void a2a_controller::calibrate() {
-  _state.consensus_state = 0;
-  _state.calibration_state = 1;
-
-  _state.K = new float[_state.net_size];
-
-  _lc.setLight(0);
-  delay(_state.T);
-  _state.O = _lc.getLight();
-  _sync();
-
-  for(int i = 0; i < _state.net_size; i++){
-    if(i == _state.net_index) _lc.setLight(255);
-    delay(_state.T);
-    _state.M = _lc.getLight();
-    _state.K[i] = (_state.M - _state.O) / 255;
-    _sync();
-    if(i == _state.net_index) _lc.setLight(0);
-  }
-  _state.calibration_state = 2;
-  printCalib();
-}
-
 void a2a_controller::consensus(){
-  _state.consensus_state = 1;
   float k11;
   float k12;
   float d2_copy[2];
@@ -210,9 +235,13 @@ void a2a_controller::consensus(){
   float d1[2];
   float b_d_;
 
+  Serial.println("ENTREI NO CONSENSUS");
+  // Update state
+  _state.consensus_state = 1;
+
   if(_state.net_index==0){
-    k11 = _state.K[0];
-    k12 = _state.K[1];
+    k11 = _state.K[0]*2.55;
+    k12 = _state.K[1]*2.55;
   } else if(_state.net_index==1){
     k11 = _state.K[1];
     k12 = _state.K[0];
@@ -230,6 +259,26 @@ void a2a_controller::consensus(){
     d11_best = -1.0;
     d12_best = -1.0;
     min_best_1 = 100000.0;
+
+    /* big number */
+    sol_unconstrained = 1;
+    sol_boundary_linear = 1;
+    sol_boundary_0 = 1;
+    sol_boundary_100 = 1;
+    sol_linear_0 = 1;
+    sol_linear_100 = 1;
+    z11 = (-1.0 - b_y1[0]) + 0.01 * d[0];
+    z12 = -b_y1[1] + 0.01 * d[1];
+    u1 = _state.O - _state.L;
+    n = k11 * k11 * 100.0 + k12 * k12 * 100.0;
+    w1 = -k11 * 100.0 * z11 - k12 * z12 * 100.0;
+    w2 = -z11 * 100.0;
+    w3 = z11 * 100.0;
+
+    /* compute unconstrained minimum */
+    d11u = 100.0 * z11;
+    d12u = 100.0 * z12;
+
     /* check feasibility of unconstrained minimum using local constraints */
     if (d11u < 0.0) { sol_unconstrained = 0; }
     if (d11u > 100.0) { sol_unconstrained = 0; }
@@ -362,18 +411,25 @@ void a2a_controller::consensus(){
     /* compute average with available knowledge */
     /* update local lagrangian */
     /* Recebe do outro arduino */
-    multi_byte_message_t *message = _i2c.multiByteMessage(ARD_CONSENSUS, _i2c.getId(), _state.net[b_i], _state.net_size);
+    Serial.print("A MINHA ITERAÇÃO:");
+    Serial.println(d1[0]);
+    Serial.println(d1[1]);
+
+    d[0]=d[0]*255;
+    d[1]=d[1]*255;
+
+    multi_float_message_t *message = _i2c.multiFloatMessage(ARD_CONSENSUS, _i2c.getId(), _state.net[b_i], _state.net_size);
     for(b_i=0; b_i<_state.net_size-1; b_i++){ message->data[b_i] = d1[b_i]; }
     _i2c.send(message->dest, (message_t*) message);
 
-    while(_state.dc_flag == false);
+    Serial.println("ENVIEI A ITERAÇÃO");
+    while(_state.dc_flag == false && _state.consensus_state == 1);
     _state.dc_flag = false;
-
+    Serial.println("Acho que recebi consensus");
     for(b_i=0; b_i<_state.net_size-1; b_i++){ d2_copy[b_i] = _state.dc_copy[_state.net_size-1-i]; }
 
     for (b_i = 0; b_i < 2; b_i++) {
       b_d_ = (d1[b_i] + d2_copy[b_i]) / 2.0;
-      d2_copy[b_i]++;
       d[b_i] = b_d_;
       b_y1[b_i] += 0.01 * (d1[b_i] - b_d_);
     }
