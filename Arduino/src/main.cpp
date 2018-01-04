@@ -38,6 +38,8 @@ void messageInterupt(int numBytes) {
   // Process arduino messages
   Serial.print("Message: ");
   Serial.println(message->id);
+  Serial.print("tamanho da mensagem recebida: ");
+  Serial.println(i2c.messageSize(message));
   if((message->id & 0xC0) == 0x80) a2a.handleReceive(message);
   // Process raspberry messages
   else if((message->id & 0xC0) == 0x40) r2a.handleReceive(message);

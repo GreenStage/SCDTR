@@ -40,13 +40,9 @@ void r2a_controller::handleReceive(message_t *message){
       break;
     case RASP_SET_NOT_OCCUP:
       _state.ocupancy = 0;
-      _state.Ref = _state.M / 3;
-      _state.consensus_state = 0;
       break;
     case RASP_SET_OCCUP:
       _state.ocupancy = 1;
-      _state.Ref = 2 * _state.M / 3;
-      _state.consensus_state = 0;
       break;
     case RASP_START_ILU:
       _state.L_stream_state = 1;
