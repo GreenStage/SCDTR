@@ -41,6 +41,14 @@ typedef struct _ard_multiple_byte{
     uint8_t data[MAX_BYTE_ARR_LENGTH];
 } __attribute__((__packed__)) multiple_byte_packet;
 
+typedef struct _ard_multiple_2byte{
+    uint8_t src_address;
+    uint8_t dest_address;
+    uint8_t packet_id;
+    uint8_t n_data;
+    uint16_t data[MAX_BYTE_ARR_LENGTH];
+} __attribute__((__packed__)) multiple_2byte_packet;
+
 typedef enum stream_state_t{
 	NOT_STREAMING = 0x0,
 	STREAMING_ILU = 0x1,

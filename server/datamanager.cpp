@@ -102,17 +102,23 @@ int size_of_packet(packet_t * p){
 	case ARD_RESP_POW_CONSUP:
 	case ARD_RESP_EXT_ILU:
 	case ARD_RESP_ILU_CTR:
-	case RASP_RQST_TIME_RUNNING:         
+	case ARD_RESP_TIME_RUNNING:         
 	  return sizeof(single_float_packet);
 	  
 	case ARD_RESP_OCCUPANCY_ST:
 	  return sizeof(single_byte_packet);
 	  
 	case ARD_RESP_M_DUTY_CICLE:
+	{
+		multiple_byte_packet * pt = (multiple_byte_packet *) p;
+		return sizeof(multiple_byte_packet) -  ( (MAX_BYTE_ARR_LENGTH - pt->n_data) * sizeof(uint8_t) );
+
+	}
 	case ARD_RESP_M_ILU:
 	{
-		multiple_float_packet * pt = (multiple_float_packet *) p;
-		return sizeof(multiple_float_packet) -  ( (MAX_BYTE_ARR_LENGTH - pt->n_data) * sizeof(float) );
+
+		multiple_2byte_packet * pt = (multiple_2byte_packet *) p;
+		return sizeof(multiple_2byte_packet) -  ( (MAX_BYTE_ARR_LENGTH - pt->n_data) * sizeof(uint16_t) );
 	}
 	case ARD_RESP_BC_ADDR:
 	case ARD_SYNC:
@@ -314,24 +320,24 @@ packet_t * DataManager::fetch_response(int deskid,int deskAddr,int type){
     int timeoutCtr = 0;
     packet_t * retval;
     while(!this->exit){
+		
 		if(pending_responses.empty()){
-			if(timeoutCtr > 60){
-				break;
-			}
+			if(timeoutCtr > 60){ break; }
 			timeoutCtr++;
 			this_thread::sleep_for(std::chrono::milliseconds(100));
 			continue;
-		}    
-    
-		for(resps_it = pending_responses.begin(); resps_it != pending_responses.end(); ++resps_it){
+		}     
+		printf("parse response\n");
+		for(resps_it = pending_responses.begin(); resps_it != pending_responses.end(); ){
 			if( ((*resps_it)->src_address == deskAddr || deskAddr == 0) && (*resps_it)->packet_id == type){
-	#ifdef DEBUG
 				printf("Processed response from dm %d, address: %d, type: %d\n",deskid,(*resps_it)->src_address,type);
-	#endif
+
 				retval = (*resps_it);
-				pending_responses.erase(resps_it);
+				resps_it = pending_responses.erase(resps_it);
+
 				return retval;
 			}
+			else ++resps_it;
 		}
 		timeoutCtr++;
 		this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -392,24 +398,28 @@ void DataManager::i2c_listener(){
 				continue;
 			}
 			
-			
+				printf("test\n");
 			for(rqsts_it = pending_requests.begin(); rqsts_it != pending_requests.end();){	
 				if(rqsts_it->dest_address == default_in_buff->src_address && default_in_buff->packet_id == response_of(rqsts_it->packet_id) ){
+					printf("TESTE\n");
 					rqsts_it = pending_requests.erase(rqsts_it);
+	
 					pending_responses.push_back(default_in_buff);
 				}
 				else rqsts_it++;
 			}
-			readBytes += size_of_packet(default_in_buff);				
-
+			printf("test2\n");
+			readBytes += size_of_packet(default_in_buff);			
+			cout << readBytes << endl;
 
 			/*Got more messages in buffer, read them*/
 			if(readBytes < xfer.rxCnt){
 				cout << "Remaining bytes in buffer: " << to_string(xfer.rxCnt -readBytes) << endl;
 			}
+			printf("test5\n");
 		}
     }
-
+    
 	xfer.control = 0;
 	status = bscXfer(&xfer);
     if (status >= 0) {
@@ -593,7 +603,7 @@ string DataManager::parse_command(function<void(string)> wt,vector<string> comma
 					retval += to_string( (( single_float_packet*) return_pck)->val);
 
 					break;
-				case RASP_RQST_OCCUPANCY_ST:
+				case ARD_RESP_OCCUPANCY_ST:
 					retval += to_string( (( single_byte_packet*) return_pck)->val);
 					break;
 			}
@@ -605,15 +615,20 @@ string DataManager::parse_command(function<void(string)> wt,vector<string> comma
     }
     else if(command.at(0).compare("s") == 0){
         int deskIt;
+        packet_t send_buf;
         int val;
         if(command.size() < 3){
             return "UNK 6";
         } 
-        if( ( deskIt = atoi(command.at(1).c_str() ) ) <= 0 || deskIt > ARRAYLENGTH(activeDesks) || ( command.at(2).compare("1") != 0 && command.at(2).compare("0") != 0 ) ){
+        if( ( deskIt = atoi(command.at(1).c_str() ) ) <= 0 || deskIt > ARRAYLENGTH(activeDesks) ){
             return "UNK 7";
         }
-        activeDesks[--deskIt]->set_occupancy_state( command.at(2).compare("1") == 0 ? true : false);
-
+		val = atoi(command.at(2).c_str());
+		send_buf.dest_address = activeDesks[--deskIt]->address;
+		send_buf.src_address = RPI_SLAVE_ADDR;
+		send_buf.packet_id = RASP_RQST_SET_OCCUP;
+		if(val == 0) send_buf.packet_id = RASP_RQST_SET_NOT_OCCUP;
+		i2c_write(send_buf);
         return "ack";
 
     }
@@ -623,6 +638,7 @@ string DataManager::parse_command(function<void(string)> wt,vector<string> comma
     }
     else if(command.at(0).compare("b") == 0){
 		int deskIt,j;
+		float val;
 		if(command.size() < 3){
             return "nak";
         } 
@@ -638,15 +654,24 @@ string DataManager::parse_command(function<void(string)> wt,vector<string> comma
 			return "nak";
 		}
 		deskIt--;
+
 		return_pck = request(deskIt,rqst_type);
+		return "s:";
 		retval = "b ";
 		retval += command.at(1);
 		retval +=" ";
 		if(!return_pck) 
 			return "Timeout waiting for arduino's response";
+	
 		for(j = 0; j < (( multiple_float_packet*) return_pck)->n_data;j++){
-			retval += to_string( (( multiple_float_packet*) return_pck)->data[j]);
-			j++;
+			if(rqst_type == RASP_RQST_M_ILU){
+				val = (( multiple_2byte_packet*) return_pck)->data[j]/100;
+				retval += to_string((( multiple_2byte_packet*) return_pck)->data[j]);
+			}
+				
+			else
+				retval += to_string( (( multiple_byte_packet*) return_pck)->data[j]);
+			retval += ",";
 		}
 		return retval;
 		
