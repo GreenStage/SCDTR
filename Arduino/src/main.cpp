@@ -1,22 +1,85 @@
 #include <Arduino.h>
-#include "light_controller.h"
 #include "i2c_controller.h"
-#include "network_controller.h"
+#include "state_controller.h"
+#include "light_controller.h"
+#include "r2a_controller.h"
+#include "a2a_controller.h"
 
-extern light_controller lc;
-extern i2c_controller i2c;
-extern network_controller nc;
+// Instanciate controllers
+// I2C for comunications with i2c bus
+i2c_controller i2c;
+// State controller for centralizing the state information
+state_controller state;
+// Light controller to implement the feedback and solo feedforward
+light_controller lc(state);
+// Raspberry to Arduino controller to process the comunications with the rpi
+r2a_controller r2a(state, i2c);
+// Arduino to Arduino controller to implement distributed calibration and consensus
+a2a_controller a2a(state, i2c, lc);
 
-void setup() {
-    Serial.begin(9600);
-    nc.init();
-    nc.calibrate();
-    //nc.consensus();
-    lc.calibrate();
-    lc.initInterrupt();
+// Prepare light controller interruption
+volatile unsigned long currentTime;
+volatile unsigned long lastTime = micros();
+void lightInterrupt(){
+  // Update current time
+  currentTime = micros();
+  // Check if a period has passed since the last iteration
+  if(currentTime-lastTime > 40000 && state.calibration_state == 2){
+    // Process light controller
+    lc.process();
+    // Update iteration time
+    lastTime = currentTime;
+  }
 }
 
-void loop()
-{
-  nc.process();
+// I2C Async message receiving
+void messageInterupt(int numBytes) {
+  message_t *message = i2c.read(numBytes);
+  // Process arduino messages
+  Serial.print("Message: ");
+  Serial.println(message->id);
+  Serial.print("tamanho da mensagem recebida: ");
+  Serial.println(i2c.messageSize(message));
+  if((message->id & 0xC0) == 0x80) a2a.handleReceive(message);
+  // Process raspberry messages
+  else if((message->id & 0xC0) == 0x40) r2a.handleReceive(message);
+}
+
+void setup() {
+  Serial.begin(9600);
+  // Initialize state with default values
+  state.init();
+  // Initialize light controller with interruption
+  lc.init(lightInterrupt);
+  // Initialize i2c controller with message received callback
+  i2c.init(messageInterupt);
+}
+
+void loop() {
+  // Check for received messages
+  if(state.hasInMessages()){
+    // Pop a message from receiving queue
+    message_t *message = state.getInMessage();
+    // Process response
+    if((message->id & 0xC0) == 0x40) r2a.handleResponse(message);
+    // Release message's memory space
+    free(message);
+  }
+
+  // Process
+  a2a.process();
+  // Update metrics
+  state.process();
+  // Update streams
+  r2a.process();
+
+  // Check for sending messages
+  if(state.hasOutMessages()){
+    // Pop message from sending queue
+    message_t *message = state.getOutMessage();
+    // Send message
+    i2c.send(message->dest, message);
+    // Release message's memory space
+    free(message);
+  }
 }

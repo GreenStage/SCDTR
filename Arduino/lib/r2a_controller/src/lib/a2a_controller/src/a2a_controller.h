@@ -22,16 +22,11 @@ class a2a_controller {
     void handleResponse(message_t *message);
 
     void handleNetAddr(message_t *message);
-    void handleNetHello(message_t *message);
-    void handleConsensus(multi_float_message_t *message);
+    void handleConsensus(multi_byte_message_t *message);
 
     void initNetwork();
     void calibrate();
     void consensus();
-
-    void printNet();
-    void printCalib();
-    void printConse(float * d);
 
     void process();
 };
